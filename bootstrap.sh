@@ -34,4 +34,6 @@ else
   curl -s https://rvm.beginrescueend.com/install/rvm | sh
 fi
 
+# Install vim bundles
+git clone http://github.com/gmarik/vundle.git ~/.vim/bundle/vundle
 vim -u ~/.vim/bundles.vim +BundleInstall +q
