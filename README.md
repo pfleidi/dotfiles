@@ -9,6 +9,12 @@ This repo contains [@pfleidi's](http://github.com/pfleidi) dotfiles for:
 
 Under dotfiles/bin there are some useful scripts and tools.
 
+## Usage
+
+    git clone https://pfleidi@github.com/pfleidi/dotfiles.git ~/dotfiles
+    cd ~/dotfiles
+    ./bootstrap.sh
+
 ## Installed frameworks
 
 - [OH-MY-ZSH](https://github.com/robbyrussell/oh-my-zsh)
