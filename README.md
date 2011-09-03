@@ -19,6 +19,7 @@ Under dotfiles/bin there are some useful scripts and tools.
 
 - [OH-MY-ZSH](https://github.com/robbyrussell/oh-my-zsh)
 - [RVM](http://beginrescueend.com/rvm/)
+- [vundle](https://github.com/gmarik/vundle)
 
 ## Custom PATHs
 
