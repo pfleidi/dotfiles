@@ -1,0 +1,61 @@
+# pfleidi's .screenrc
+
+vbell off
+#shell zsh # Use zsh as default shell
+
+# detach on hangup
+autodetach on
+
+# don't display the copyright page
+startup_message off
+
+# emulate .logout message
+pow_detach_msg "Screen session of \$LOGNAME \$:cr:\$:nl:ended."
+
+# Scrollback lines
+defscrollback 20000
+
+#remove some stupid / dangerous key bindings
+bind k
+bind ^k
+bind .
+bind ^\
+bind \\
+bind ^h
+bind h
+
+#make them better
+bind 'K' kill
+bind '}' history
+
+# Yet another hack:
+# Prepend/append register [/] to the paste if ^a^] is pressed.
+# This lets me have autoindent mode in vi.
+register [ "\033:se noai\015a"
+register ] "\033:se ai\015a"
+bind ^] paste [.]
+
+# last line with some useful info
+hardstatus alwayslastline
+#
+#  Toggle 'fullscreen' or not.
+#
+bind f eval "caption splitonly" "hardstatus ignore"
+bind F eval "caption always"    "hardstatus alwayslastline"
+
+hardstatus string '%{rk}[ %{Y}%H %{r}][ %{wk}%?%-Lw%?%{=b kR}(%{W}%n*%f %t%?(%u)%?%{=b kR})%{= kw}%?%+Lw%?%?%= %{r}][%{Y}%l%{r}]%{=b r}[%{=b Y} %m/%d %c %{r}]%{W}'
+
+# Use more than 10 screen windows 
+bind 'q' select 11
+bind 'w' select 12
+bind 'e' select 13
+bind 'r' select 14
+bind 't' select 15
+bind 'y' select 16
+bind 'u' select 17
+bind 'i' select 18
+bind 'o' select 19
+bind 'p' select 10
+
+# Start with screen 1
+screen 1
