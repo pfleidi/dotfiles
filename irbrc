@@ -10,6 +10,10 @@ IRB.conf[:PROMPT_MODE] = :SIMPLE
 %w[rubygems looksee/shortcuts wirble].each do |gem|
   begin
     require gem
+    if gem == 'wirble'
+      Wirble.init
+      Wirble.colorize
+    end
   rescue LoadError
   end
 end
