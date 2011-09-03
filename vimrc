@@ -1,26 +1,31 @@
 " pfleidis vimrc file
-"
+
+" Use Vim settings, rather then Vi settings (much better!).
+set nocompatible
+
+" Vundle and bundles configuration
+source ~/.vim/bundles.vim
+
 " When started as "evim", evim.vim will already have done these settings.
 if v:progname =~? "evim"
   finish
 endif
 
-" Use Vim settings, rather then Vi settings (much better!).
-" This must be first, because it changes other options as a side effect.
-set nocompatible
-
 " allow backspacing over everything in insert mode
 set backspace=indent,eol,start
-set history=120            " keep 120 lines of command line history
-set autoindent             " auto indenting
-set smartindent            " smart indenting
-set ruler                  " show the cursor position all the time
-set showcmd                " display incomplete commands
-set incsearch              " do incremental searching
-set smartcase              " do smart case matching
-set background=dark        " dark background is used
-set laststatus=2           " show always status line on bottom
-set ttyfast                " we have a fast tty
+set history=120             " keep 120 lines of command line history
+set autoindent              " auto indenting
+set smartindent             " smart indenting
+set ruler                   " show the cursor position all the time
+set showcmd                 " display incomplete commands
+set incsearch               " do incremental searching
+set smartcase               " do smart case matching
+set background=dark         " dark background is used
+set laststatus=2            " show always status line on bottom
+set ttyfast                 " we have a fast tty
+set showmatch               " Show matching brackets.
+set matchtime=5             " Bracket blinking.
+
 
 " auto-change directory 
 "if exists('+autochdir')
@@ -43,8 +48,9 @@ set number
 
 " Don't use Ex mode, use Q for formatting
 map Q gq
-" vim supports also a mouse
-" set mouse=i
+
+" vim also supports a mouse
+set mouse=a
 
 " Switch syntax highlighting on, when the terminal has colors
 " Also switch on highlighting the last used search pattern.
@@ -81,6 +87,22 @@ else
   set autoindent     " always set autoindenting on
 endif " has("autocmd")
 
+" Local config
+if filereadable(".vimrc.local")
+  source .vimrc.local
+endif
+
+" Use Ack instead of Grep when available
+if executable("ack")
+  set grepprg=ack\ -H\ --nogroup\ --nocolor\ --ignore-dir=tmp\ --ignore-dir=coverage
+endif
+
+" Tab completion options
+" (only complete to the longest unambiguous match, and show a menu)
+set completeopt=longest,menu
+set wildmode=list:longest,list:full
+set complete=.,t
+
 " Keys
 set pastetoggle=<F8>
 nmap <F9> :set invnumber<CR>
@@ -113,7 +135,6 @@ let NERDTreeIgnore=['\.vim$', '\~$', '\.pyc$', '\.swp$']
 let NERDTreeSortOrder=['^__\.py$', '\/$', '*', '\.swp$',  '\~$']
 let NERDTreeShowBookmarks=0
 map <F3> :NERDTreeToggle<CR>
-
 
 " Show buffer number, filetype, fileformat and fileencoding in statusline
 set statusline=[%n]\ [%f]\ %w%y%r%m[%{&fileformat}][%{&fileencoding}]\ %=\ %l/%L,%-5c\ %P\ 

@@ -34,3 +34,4 @@ else
   curl -s https://rvm.beginrescueend.com/install/rvm | sh
 fi
 
+vim -u ~/.vim/bundles.vim +BundleInstall +q
