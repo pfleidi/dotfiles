@@ -1,6 +1,6 @@
 #!/bin/sh
 
-for file in $HOME/dotfiles/*; do
+for file in $(dirname $0)/*; do
   filename=$(basename $file)
   destination=$HOME/.$filename
   if [ $filename = $(basename $0) -o $filename = "README.md" ]; then continue ; fi
@@ -35,4 +35,4 @@ fi
 
 # Install vim bundles
 git clone http://github.com/gmarik/vundle.git ~/.vim/bundle/vundle
-vim -u ~/.vim/bundles.vim +BundleInstall +q
+vim -u ~/.vim/bundles.vim +BundleInstall +q +q
