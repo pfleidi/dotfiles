@@ -19,7 +19,7 @@ export DISABLE_AUTO_UPDATE="true"
 plugins=(dirpersist git osx brew npm rvm gem redis-cli)
 
 # load ~/.zshrc.local
-[ -x $HOME/.zshrc.local ] && source $HOME/.zshrc.local
+[[ -s $HOME/.zshrc.local ]] && source $HOME/.zshrc.local
 
 # load rvm
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
