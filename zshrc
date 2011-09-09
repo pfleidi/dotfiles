@@ -67,4 +67,9 @@ zstyle '*' hosts $hosts
 #zstyle ':completion:*:*:*:*:*' menu complete
 
 # show fortune cookie
-[ -x $(which fortune) ] && fortune -a
+type fortune &>/dev/null && fortune -a
+
+# load ~/.zshrc.local
+[ -x $HOME/.zshrc.local ] && source $HOME/.zshrc.local
+
+# EOF
