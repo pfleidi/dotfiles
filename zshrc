@@ -18,6 +18,13 @@ export DISABLE_AUTO_UPDATE="true"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 plugins=(dirpersist git osx brew npm rvm gem redis-cli)
 
+# load ~/.zshrc.local
+[ -x $HOME/.zshrc.local ] && source $HOME/.zshrc.local
+
+# load rvm
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
+
+
 source $ZSH/oh-my-zsh.sh
 
 # ============== Custom tweaks below this line ============== 
@@ -45,9 +52,6 @@ export PAGER=less
 # Put custom $PATH settings into ~/.profile
 export PATH=$PATH:$HOME/.bin/
 
-# load rvm
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" 
-
 #077 would be more secure, but 022 is generally quite realistic
 umask 022
 
@@ -68,8 +72,5 @@ zstyle '*' hosts $hosts
 
 # show fortune cookie
 type fortune &>/dev/null && fortune -a
-
-# load ~/.zshrc.local
-[ -x $HOME/.zshrc.local ] && source $HOME/.zshrc.local
 
 # EOF
