@@ -29,3 +29,7 @@ imap <D-8> <Esc>8gt
 map  <D-9> 9gt
 imap <D-9> <Esc>9gt
 
+" Include local gvim config
+if filereadable(expand("~/.vimrc.local"))
+  source ~/.gvimrc.local
+endif

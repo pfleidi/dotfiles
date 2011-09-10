@@ -138,3 +138,8 @@ map <F3> :NERDTreeToggle<CR>
 
 " Show buffer number, filetype, fileformat and fileencoding in statusline
 set statusline=[%n]\ [%f]\ %w%y%r%m[%{&fileformat}][%{&fileencoding}]\ %=\ %l/%L,%-5c\ %P\ 
+
+" Include local vim config
+if filereadable(expand("~/.vimrc.local"))
+  source ~/.vimrc.local
+endif
