@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
 begin
-  print File.realpath(ARGV[0])
+  $stdout.print File.realpath(ARGV[0])
 rescue Exception => err
-  puts err
+  $stderr.print err
   exit 1
 end
