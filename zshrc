@@ -50,7 +50,7 @@ setopt hist_ignore_space
 export EDITOR=vim
 export PAGER=less
 
-# Put custom $PATH settings into ~/.profile or ~/.zshrc.local
+# Put custom $PATH settings into ~/.zprofile or ~/.zshrc.local
 export PATH=$PATH:$HOME/.bin/
 
 #077 would be more secure, but 022 is generally quite realistic
