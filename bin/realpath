@@ -1,7 +1,10 @@
 #!/usr/bin/env ruby
 
+require 'pathname'
+
 begin
-  $stdout.print File.realpath(ARGV[0])
+  path = Pathname.new(ARGV[0])
+  $stdout.print path.realpath
 rescue Exception => err
   $stderr.print err
   exit 1
