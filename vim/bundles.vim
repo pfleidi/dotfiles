@@ -12,6 +12,7 @@ Bundle 'tpope/vim-fugitive'
 Bundle 'jQuery'
 Bundle 'snipMate'
 Bundle 'ruby-matchit'
+Bundle 'git://github.com/tpope/vim-cucumber.git'
 
 " Git integration
 Bundle 'git.zip'
