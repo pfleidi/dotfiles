@@ -7,11 +7,13 @@ call vundle#rc()
 
 Bundle 'gmarik/vundle'
 Bundle 'tpope/vim-fugitive'
+Bundle 'SudoEdit.vim'
 
 " Programming
 Bundle 'jQuery'
 Bundle 'snipMate'
 Bundle 'ruby-matchit'
+Bundle 'git://github.com/gregsexton/MatchTag.git'
 Bundle 'git://github.com/tpope/vim-cucumber.git'
 
 " Git integration
