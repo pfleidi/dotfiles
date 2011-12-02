@@ -28,11 +28,11 @@ set matchtime=5             " Bracket blinking.
 
 
 " auto-change directory 
-"if exists('+autochdir')
-"  set autochdir
-"else
-"  autocmd BufEnter * silent! lcd %:p:h:gs/ /\\ /
-"endif
+if exists('+autochdir')
+  set autochdir
+else
+  autocmd BufEnter * silent! lcd %:p:h:gs/ /\\ /
+endif
 
 " set backup dir
 set backup
