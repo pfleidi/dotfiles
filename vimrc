@@ -131,8 +131,15 @@ let NERDTreeSortOrder=['^__\.py$', '\/$', '*', '\.swp$',  '\~$']
 let NERDTreeShowBookmarks=0
 map <F3> :NERDTreeToggle<CR>
 
+" CTags
+map <Leader>rt :!ctags --extra=+f -R *<CR><CR>
+map <C-\> :tnext<CR>
+
 " Show buffer number, filetype, fileformat and fileencoding in statusline
 set statusline=[%n]\ [%f]\ %w%y%r%m[%{&fileformat}][%{&fileencoding}]\ %=\ %l/%L,%-5c\ %P\ 
+
+"improve autocomplete menu color
+highlight Pmenu ctermbg=238 gui=bold
 
 " Include local vim config
 if filereadable(expand("~/.vimrc.local"))
