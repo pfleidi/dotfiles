@@ -36,5 +36,6 @@ Bundle 'Markdown-syntax'
 " Color schemes
 Bundle 'Solarized'
 Bundle 'Wombat'
+Bundle 'wombat256.vim'
 
 filetype plugin indent on     " required!

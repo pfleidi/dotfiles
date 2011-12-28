@@ -117,7 +117,9 @@ autocmd FileType xml,xsd,xslt,xhtml,html,php,aspvbs inoremap <buffer> <M-"> &quo
 " Always show statusline
 set laststatus=2
 set noruler
-colorscheme wombat
+
+" Color scheme settings
+colorscheme wombat256mod
 
 " With a map leader it's possible to do extra key combinations
 " like <leader>w saves the current file

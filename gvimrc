@@ -7,6 +7,8 @@ if has("gui_running")
   set guioptions-=T
 endif
 
+colorscheme wombat
+
 " Map Command-# to switch tabs
 map  <D-0> 0gt
 imap <D-0> <Esc>0gt
