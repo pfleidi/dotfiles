@@ -33,7 +33,7 @@ source $ZSH/oh-my-zsh.sh
 # Aliases
 source $HOME/.zsh/aliases.zsh
 # Key Bindings
-source /Users/pfleidi/.zsh/keybindings.zsh
+source $HOME/.zsh/keybindings.zsh
 
 #History Settings
 HISTFILE=~/.zsh_history
