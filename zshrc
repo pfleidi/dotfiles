@@ -19,6 +19,10 @@ export DISABLE_AUTO_UPDATE="true"
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 plugins=(dirpersist git osx brew npm rvm ruby gem redis-cli)
 
+# Locale settings (utf-8)
+export LC_CTYPE=en_US.UTF-8
+export LANG=en_US.UTF-8
+
 # load ~/.zshrc.local
 [[ -s $HOME/.zshrc.local ]] && source "$HOME/.zshrc.local"
 
