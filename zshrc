@@ -80,4 +80,6 @@ zstyle '*' hosts $hosts
 # show fortune cookie
 type fortune &>/dev/null && fortune -a
 
+PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
+
 # EOF
