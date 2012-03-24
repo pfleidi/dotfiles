@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 dir=$(dirname $0)
 dotdir=$($dir/bin/realpath $dir)
@@ -30,7 +30,7 @@ else
 fi
 
 # Installing/updating rvm
-curl -s https://rvm.beginrescueend.com/install/rvm | bash
+bash -s stable < <(curl -s https://raw.github.com/wayneeseguin/rvm/master/binscripts/rvm-installer)
 
 # Install vim bundles
 git clone http://github.com/gmarik/vundle.git ~/.vim/bundle/vundle
