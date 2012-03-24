@@ -98,15 +98,8 @@ set completeopt=longest,menu
 set wildmode=list:longest,list:full
 set complete=.,t
 
-" Keys
-set pastetoggle=<F8>
-nmap <F9> :set invnumber<CR>
-
 " Remove highlight after search
 nmap <silent> ,/ :nohlsearch<CR>
-
-set fdm=expr
-set fde=getline(v:lnum)=~'^\\s*#'?1:getline(prevnonblank(v:lnum))=~'^\\s*#'?1:getline(nextnonblank(v:lnum))=~'^\\s*#'?1:0
 
 autocmd FileType xml,xsd,xslt,xhtml,html,php,aspvbs inoremap <buffer> <M-&> &amp;
 autocmd FileType xml,xsd,xslt,xhtml,html,php,aspvbs inoremap <buffer> <M-<> &lt;

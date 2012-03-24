@@ -12,8 +12,7 @@ Bundle 'SudoEdit.vim'
 " Programming
 Bundle 'jQuery'
 Bundle 'snipMate'
-Bundle 'haskell.vim'
-Bundle 'ruby-matchit'
+Bundle 'ruby'
 Bundle 'git://github.com/gregsexton/MatchTag.git'
 Bundle 'git://github.com/tpope/vim-cucumber.git'
 
