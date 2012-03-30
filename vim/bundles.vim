@@ -32,6 +32,7 @@ Bundle 'trailing-whitespace'
 " Syntax
 Bundle 'scala.vim'
 Bundle 'Markdown-syntax'
+Bundle 'vim-coffee-script'
 
 " Color schemes
 Bundle 'Solarized'
