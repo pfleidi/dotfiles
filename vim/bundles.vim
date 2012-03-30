@@ -27,6 +27,7 @@ Bundle 'The-NERD-tree'
 " Indentation
 Bundle 'IndentAnything'
 Bundle 'Javascript-Indentation'
+Bundle 'trailing-whitespace'
 
 " Syntax
 Bundle 'scala.vim'
