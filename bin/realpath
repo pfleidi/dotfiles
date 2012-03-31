@@ -1,11 +1,3 @@
-#!/usr/bin/env ruby
+#!/bin/sh
 
-require 'pathname'
-
-begin
-  path = Pathname.new(ARGV[0])
-  $stdout.print path.realpath
-rescue Exception => err
-  $stderr.print err
-  exit 1
-end
+(cd "$1" && echo "$(pwd)")
