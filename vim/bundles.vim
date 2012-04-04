@@ -12,8 +12,8 @@ Bundle 'SudoEdit.vim'
 Bundle 'jQuery'
 Bundle 'snipMate'
 Bundle 'ruby'
-Bundle 'git://github.com/gregsexton/MatchTag.git'
-Bundle 'git://github.com/tpope/vim-cucumber.git'
+Bundle 'gregsexton/MatchTag'
+Bundle 'tpope/vim-cucumber'
 Bundle 'matchit.zip'
 
 " Git integration
