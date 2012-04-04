@@ -14,7 +14,6 @@ Bundle 'snipMate'
 Bundle 'ruby'
 Bundle 'git://github.com/gregsexton/MatchTag.git'
 Bundle 'git://github.com/tpope/vim-cucumber.git'
-Bundle 'git://github.com/kana/vim-smartinput.git'
 Bundle 'matchit.zip'
 
 " Git integration
