@@ -1,3 +1,5 @@
+# local copy of aliases defined in: https://github.com/mxcl/homebrew/blob/master/Library/Formula/grc.rb
+
 GRC=`which grc`
 if [ "$TERM" != dumb ] && [ -n GRC ]
 then
