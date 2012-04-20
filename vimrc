@@ -27,7 +27,7 @@ set showmatch               " Show matching brackets.
 set matchtime=5             " Bracket blinking.
 
 
-" auto-change directory 
+" auto-change directory
 if exists('+autochdir')
   set autochdir
 else
@@ -42,7 +42,7 @@ set directory=~/.vim/tmp
 " No Tabs are used
 set tabstop=2
 set shiftwidth=2
-set expandtab 
+set expandtab
 set smarttab
 set number
 
@@ -78,7 +78,7 @@ if has("autocmd")
     " When editing a file, always jump to the last known cursor position.
     " Don't do it when the position is invalid or when inside an event handler
     " (happens when dropping a file on gvim).
-    autocmd BufReadPost *
+    autocmd BufReadPost
           \ if line("'\"") > 0 && line("'\"") <= line("$") |
           \   exe "normal! g`\"" |
           \ endif
@@ -131,7 +131,7 @@ map <Leader>rt :!ctags --extra=+f -R *<CR><CR>
 map <C-\> :tnext<CR>
 
 " Show buffer number, filetype, fileformat and fileencoding in statusline
-set statusline=[%n]\ [%f]\ %w%y%r%m[%{&fileformat}][%{&fileencoding}]\ %=\ %l/%L,%-5c\ %P\ 
+set statusline=[%n]\ [%f]\ %w%y%r%m[%{&fileformat}][%{&fileencoding}]\ %=\ %l/%L,%-5c\ %P\
 
 "improve autocomplete menu color
 highlight Pmenu ctermbg=238 gui=bold
