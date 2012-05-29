@@ -1,10 +1,19 @@
 [user]
-	email = sg+github@roothausen.de
-	name = Sven Pfleiderer
+  email = sg+github@roothausen.de
+  name = Sven Pfleiderer
 
 [alias]
-  whelp = !bash -c 'open http://www.kernel.org/pub/software\
-    /scm/git/docs/git-$0.html'
+  whelp = !bash -c 'open http://www.kernel.org/pub/software/scm/git/docs/git-$0.html'
+  co = checkout
+  ci = commit
+  st = status
+  br = branch
+  hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+  type = cat-file -t
+  dump = cat-file -p
+
+[branch]
+  autosetuprebase = always
 
 [color]
   branch = auto
@@ -26,3 +35,6 @@
   added = yellow
   changed = green
   untracked = cyan
+[rerere]
+	enabled = 1
+	autoupdate = true
