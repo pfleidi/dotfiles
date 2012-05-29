@@ -35,6 +35,7 @@
   added = yellow
   changed = green
   untracked = cyan
+
 [rerere]
 	enabled = 1
 	autoupdate = true
