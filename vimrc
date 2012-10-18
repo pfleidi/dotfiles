@@ -107,6 +107,8 @@ autocmd FileType xml,xsd,xslt,xhtml,html,php,aspvbs inoremap <buffer> <M->> &gt;
 autocmd FileType xml,xsd,xslt,xhtml,html,php,aspvbs inoremap <buffer> <M-'> &apos;
 autocmd FileType xml,xsd,xslt,xhtml,html,php,aspvbs inoremap <buffer> <M-"> &quot;
 
+autocmd BufNewFile,BufRead *.thor set filetype=ruby
+
 " Always show statusline
 set laststatus=2
 set noruler
