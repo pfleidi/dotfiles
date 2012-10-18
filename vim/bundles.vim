@@ -11,7 +11,7 @@ Bundle 'SudoEdit.vim'
 " Programming
 Bundle 'jQuery'
 Bundle 'snipMate'
-Bundle 'ruby'
+Bundle 'git://github.com/vim-ruby/vim-ruby.git'
 Bundle 'gregsexton/MatchTag'
 Bundle 'tpope/vim-cucumber'
 Bundle 'matchit.zip'
@@ -31,8 +31,8 @@ Bundle 'trailing-whitespace'
 
 " Syntax
 Bundle 'scala.vim'
-Bundle 'Markdown-syntax'
 Bundle 'vim-coffee-script'
+Bundle 'git://github.com/tpope/vim-markdown.git'
 
 " Color schemes
 Bundle 'Solarized'
