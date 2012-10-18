@@ -29,8 +29,8 @@ else
   git clone git://github.com/robbyrussell/oh-my-zsh.git $HOME/.oh-my-zsh
 fi
 
-# Installing/updating rvm
-bash -s stable < <(curl -s https://raw.github.com/wayneeseguin/rvm/master/binscripts/rvm-installer)
+# Installing rbenv
+test -d ~/.rbenv || git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
 
 # Install vim bundles
 git clone http://github.com/gmarik/vundle.git ~/.vim/bundle/vundle
