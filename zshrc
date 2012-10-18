@@ -60,7 +60,7 @@ export EDITOR=vim
 export PAGER=less
 
 # Put custom $PATH settings into ~/.zprofile or ~/.zshrc.local
-export PATH=$PATH:$HOME/.bin/
+export PATH=$PATH:$HOME/.bin
 
 #077 would be more secure, but 022 is generally quite realistic
 umask 022
