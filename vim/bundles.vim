@@ -33,6 +33,7 @@ Bundle 'trailing-whitespace'
 Bundle 'scala.vim'
 Bundle 'Markdown-syntax'
 Bundle 'vim-coffee-script'
+Bundle 'git://github.com/stonean/slim.git'
 
 " Color schemes
 Bundle 'Solarized'
