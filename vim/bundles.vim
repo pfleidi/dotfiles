@@ -30,10 +30,9 @@ Bundle 'Javascript-Indentation'
 Bundle 'trailing-whitespace'
 
 " Syntax
-Bundle 'scala.vim'
-Bundle 'Markdown-syntax'
+Bundle 'git://github.com/tpope/vim-markdown.git'
 Bundle 'vim-coffee-script'
-Bundle 'git://github.com/stonean/slim.git'
+Bundle 'git://github.com/bbommarito/vim-slim.git'
 
 " Color schemes
 Bundle 'Solarized'
