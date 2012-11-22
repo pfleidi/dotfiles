@@ -5,6 +5,7 @@ This repo contains [@pfleidi's](http://github.com/pfleidi) dotfiles for:
 - zsh
 - (Mac)vim
 - GNU screen
+- tmux
 - Ruby/irb
 
 Under dotfiles/bin there are some useful scripts and tools.
@@ -18,7 +19,7 @@ Under dotfiles/bin there are some useful scripts and tools.
 ## Installed frameworks
 
 - [OH-MY-ZSH](https://github.com/robbyrussell/oh-my-zsh)
-- [RVM](http://beginrescueend.com/rvm/)
+- [rbenv](https://github.com/sstephenson/rbenv)
 - [vundle](https://github.com/gmarik/vundle)
 
 ## Custom PATHs
