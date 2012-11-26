@@ -17,7 +17,7 @@ export DISABLE_AUTO_UPDATE="true"
 # export DISABLE_LS_COLORS="true"
 
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-plugins=(git osx brew rvm ruby gem bundler zsh-syntax-highlighting)
+plugins=(git osx brew ruby rbenv gem bundler zsh-syntax-highlighting)
 
 # Needs https://github.com/zsh-users/zsh-syntax-highlighting/
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor)
@@ -28,9 +28,6 @@ export LANG=en_US.UTF-8
 
 # load ~/.zshrc.local
 [[ -s $HOME/.zshrc.local ]] && source "$HOME/.zshrc.local"
-
-# load rvm
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
 
 # load oh-my-zsh
 source $ZSH/oh-my-zsh.sh
@@ -71,10 +68,10 @@ zle -N self-insert url-quote-magic
 
 # SSH Stuff
 if [ -r $HOME/.ssh/config ]; then
-	hosts=(`cat $HOME/.ssh/config | egrep '^Host.*' | sed "s/^Host[ ]*\(.*\)$/\1/"`)
+  hosts=(`cat $HOME/.ssh/config | egrep '^Host.*' | sed "s/^Host[ ]*\(.*\)$/\1/"`)
 fi
 if [ -r /etc/hosts ]; then
-	hosts=( $hosts $(cat /etc/hosts | grep -v '^\#' | awk '{print $2}') )
+  hosts=( $hosts $(cat /etc/hosts | grep -v '^\#' | awk '{print $2}') )
 fi
 
 zstyle '*' hosts $hosts
@@ -84,7 +81,5 @@ zstyle '*' hosts $hosts
 type fortune &>/dev/null && fortune -a
 # load grc aliases for colored shell output
 type grc &>/dev/null && source $HOME/.zsh/grc_aliases.zsh
-
-PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 
 # EOF

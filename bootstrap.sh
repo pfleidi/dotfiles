@@ -29,9 +29,13 @@ else
   git clone git://github.com/robbyrussell/oh-my-zsh.git $HOME/.oh-my-zsh
 fi
 
-# Installing rbenv
-test -d ~/.rbenv || git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
 
 # Install vim bundles
-git clone http://github.com/gmarik/vundle.git ~/.vim/bundle/vundle
+if [ -d $HOME/.vim/bundle/vundle ]; then
+  printf "Updading vundle ...\n"
+  cd $HOME/.vim/bundle/vundle; git pull; cd -
+else
+  git clone http://github.com/gmarik/vundle.git $HOME/.vim/bundle/vundle
+fi
+
 vim -u ~/.vim/bundles.vim +BundleInstall +q +q
