@@ -19,6 +19,7 @@ Bundle 'matchit.zip'
 " Git integration
 Bundle 'git.zip'
 Bundle 'fugitive.vim'
+Bundle 'airblade/vim-gitgutter'
 
 " Navigation
 Bundle 'git://git.wincent.com/command-t.git'
