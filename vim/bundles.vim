@@ -7,6 +7,7 @@ call vundle#rc()
 
 Bundle 'gmarik/vundle'
 Bundle 'SudoEdit.vim'
+Bundle 'itspriddle/vim-marked'
 
 " Programming
 Bundle 'jQuery'
@@ -31,9 +32,10 @@ Bundle 'Javascript-Indentation'
 Bundle 'trailing-whitespace'
 
 " Syntax
-Bundle 'git://github.com/tpope/vim-markdown.git'
+Bundle 'groenewege/vim-less'
+Bundle 'tpope/vim-markdown'
 Bundle 'vim-coffee-script'
-Bundle 'git://github.com/bbommarito/vim-slim.git'
+Bundle 'bbommarito/vim-slim'
 
 " Color schemes
 Bundle 'Solarized'
