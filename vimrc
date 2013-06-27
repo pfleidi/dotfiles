@@ -26,6 +26,10 @@ set ttyfast                 " we have a fast tty
 set showmatch               " Show matching brackets.
 set matchtime=5             " Bracket blinking.
 
+" Split behavior
+set splitbelow
+set splitright
+
 
 " auto-change directory
 if exists('+autochdir')
