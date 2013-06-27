@@ -30,14 +30,6 @@ set matchtime=5             " Bracket blinking.
 set splitbelow
 set splitright
 
-
-" auto-change directory
-if exists('+autochdir')
-  set autochdir
-else
-  autocmd BufEnter * silent! lcd %:p:h:gs/ /\\ /
-endif
-
 " set backup dir
 set backup
 set backupdir=~/.vim/backup/
@@ -135,6 +127,7 @@ map <F3> :NERDTreeToggle<CR>
 " CTags
 map <Leader>rt :!ctags --extra=+f -R *<CR><CR>
 map <C-\> :tnext<CR>
+nnoremap <silent> <Leader>b :TagbarToggle<CR>
 
 " Show buffer number, filetype, fileformat and fileencoding in statusline
 set statusline=[%n]\ [%f]\ %w%y%r%m[%{&fileformat}][%{&fileencoding}]\ %=\ %l/%L,%-5c\ %P\

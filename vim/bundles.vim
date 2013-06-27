@@ -17,6 +17,8 @@ Bundle 'gregsexton/MatchTag'
 Bundle 'tpope/vim-cucumber'
 Bundle 'matchit.zip'
 Bundle 'Syntastic'
+Bundle 'Tagbar'
+
 
 " Git integration
 Bundle 'git.zip'
@@ -24,7 +26,6 @@ Bundle 'fugitive.vim'
 Bundle 'airblade/vim-gitgutter'
 
 " Navigation
-Bundle 'git://git.wincent.com/command-t.git'
 Bundle 'The-NERD-tree'
 
 " Indentation
