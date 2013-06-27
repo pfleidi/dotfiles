@@ -16,6 +16,7 @@ Bundle 'git://github.com/vim-ruby/vim-ruby.git'
 Bundle 'gregsexton/MatchTag'
 Bundle 'tpope/vim-cucumber'
 Bundle 'matchit.zip'
+Bundle 'Syntastic'
 
 " Git integration
 Bundle 'git.zip'
