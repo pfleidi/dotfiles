@@ -37,7 +37,7 @@ Bundle 'trailing-whitespace'
 Bundle 'groenewege/vim-less'
 Bundle 'tpope/vim-markdown'
 Bundle 'vim-coffee-script'
-Bundle 'bbommarito/vim-slim'
+Bundle 'slim-template/vim-slim'
 
 " Color schemes
 Bundle 'Solarized'
