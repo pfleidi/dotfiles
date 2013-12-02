@@ -18,6 +18,7 @@ Bundle 'tpope/vim-cucumber'
 Bundle 'matchit.zip'
 Bundle 'Syntastic'
 Bundle 'Tagbar'
+Bundle 'ack.vim'
 
 
 " Git integration
