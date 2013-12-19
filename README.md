@@ -12,15 +12,31 @@ Under dotfiles/bin there are some useful scripts and tools.
 
 ## Usage
 
-    git clone https://github.com/pfleidi/dotfiles.git ~/dotfiles
-    cd ~/dotfiles
-    ./bootstrap.sh
+```bash
+git clone https://github.com/pfleidi/dotfiles.git ~/dotfiles
+cd ~/dotfiles
+./bootstrap.sh
+```
+
+## OSX Setup
+
+```bash
+# Install commandline tools
+xcode-select --install
+
+# Install homebrew
+ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
+
+# Install packages
+cd ~/dotfiles && brew bundle
+```
 
 ## Installed frameworks
 
 - [OH-MY-ZSH](https://github.com/robbyrussell/oh-my-zsh)
 - [rbenv](https://github.com/sstephenson/rbenv)
 - [vundle](https://github.com/gmarik/vundle)
+- [Homebrew](http://brew.sh/) (optional)
 
 ## Custom PATHs
 
@@ -30,7 +46,9 @@ The dotfiles bundle doesn't contain any custom PATH settings exept for the helpe
 
 Local ZSH settings can be overridden by creating a ~/.zshrc.local file:
 
-    # Override theme
-    export ZSH_THEME="candy"
-    # Override plugins
-    plugins=(dirpersist git npm deb debian rvm gem)
+```bash
+# Override theme
+export ZSH_THEME="candy"
+# Override plugins
+plugins=(dirpersist git npm deb debian rvm gem)
+```
