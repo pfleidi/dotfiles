@@ -11,6 +11,7 @@ install reattach-to-user-namespace
 install watch
 install wget
 install tree
+install ssh-copy-id
 
 install ack
 install ctags
@@ -24,4 +25,7 @@ install ruby-build
 install rbenv-gemset
 
 install node
+
+# Make sure everything is fine
+doctor
 
