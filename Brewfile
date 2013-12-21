@@ -44,11 +44,11 @@ cask install vagrant
 cask install google-chrome
 cask install google-earth
 cask install firefox
-cask install skype
 cask install opera
 cask install adium
 
 # Communication
+cask install skype
 cask install dropbox
 cask install filezilla
 cask install f-lux
