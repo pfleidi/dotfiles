@@ -41,24 +41,23 @@ cask install virtualbox
 cask install vagrant
 
 # Browsers
-cask install google-chrome
 cask install google-earth
 cask install firefox
 cask install opera
-cask install adium
 
 # Communication
+cask install adium
 cask install skype
 cask install dropbox
 cask install filezilla
 cask install f-lux
 cask install gitx-l
-cask install handbrake
 
 # Entertainment
 cask install spotify
 cask install vlc
 cask install mplayerx
+cask install handbrake
 cask install send-to-kindle
 
 # Other
