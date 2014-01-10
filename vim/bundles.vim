@@ -8,9 +8,9 @@ call vundle#rc()
 Bundle 'gmarik/vundle'
 Bundle 'SudoEdit.vim'
 Bundle 'itspriddle/vim-marked'
+Bundle 'Command-T'
 
 " Programming
-Bundle 'jQuery'
 Bundle 'snipMate'
 Bundle 'git://github.com/vim-ruby/vim-ruby.git'
 Bundle 'gregsexton/MatchTag'
@@ -37,7 +37,7 @@ Bundle 'trailing-whitespace'
 " Syntax
 Bundle 'groenewege/vim-less'
 Bundle 'tpope/vim-markdown'
-Bundle 'vim-coffee-script'
+Bundle 'haml.zip'
 Bundle 'slim-template/vim-slim'
 
 " Color schemes
@@ -46,3 +46,4 @@ Bundle 'Wombat'
 Bundle 'wombat256.vim'
 
 filetype plugin indent on     " required!
+
