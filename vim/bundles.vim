@@ -11,7 +11,11 @@ Bundle 'itspriddle/vim-marked'
 Bundle 'Command-T'
 
 " Programming
-Bundle 'snipMate'
+Bundle "MarcWeber/vim-addon-mw-utils"
+Bundle "tomtom/tlib_vim"
+Bundle "garbas/vim-snipmate"
+Bundle "honza/vim-snippets"
+
 Bundle 'git://github.com/vim-ruby/vim-ruby.git'
 Bundle 'gregsexton/MatchTag'
 Bundle 'tpope/vim-cucumber'
@@ -19,6 +23,7 @@ Bundle 'matchit.zip'
 Bundle 'Syntastic'
 Bundle 'Tagbar'
 Bundle 'ack.vim'
+Bundle 'scrooloose/nerdcommenter'
 
 
 " Git integration
