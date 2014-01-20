@@ -20,6 +20,7 @@ install git
 install mysql
 install sqlite
 install yajl
+install fswatch
 
 install rbenv
 install ruby-build
