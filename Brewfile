@@ -40,9 +40,10 @@ cask install sequel-pro
 cask install github
 cask install virtualbox
 cask install vagrant
+cask install gitx-l
 
 # Browsers
-cask install google-earth
+cask install google-chrome
 cask install firefox
 cask install opera
 
@@ -50,9 +51,7 @@ cask install opera
 cask install adium
 cask install skype
 cask install dropbox
-cask install filezilla
 cask install f-lux
-cask install gitx-l
 
 # Entertainment
 cask install spotify
@@ -68,6 +67,6 @@ cask install disk-inventory-x
 cask install superduper
 cask install nvalt
 cask install teamviewer
+cask install filezilla
 
 cleanup
-
