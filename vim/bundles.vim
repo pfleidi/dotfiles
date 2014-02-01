@@ -8,31 +8,35 @@ call vundle#rc()
 Bundle 'gmarik/vundle'
 Bundle 'SudoEdit.vim'
 Bundle 'itspriddle/vim-marked'
-Bundle 'Command-T'
 
-" Programming
+" Snippets
 Bundle "MarcWeber/vim-addon-mw-utils"
 Bundle "tomtom/tlib_vim"
 Bundle "garbas/vim-snipmate"
 Bundle "honza/vim-snippets"
 
-Bundle 'git://github.com/vim-ruby/vim-ruby.git'
-Bundle 'gregsexton/MatchTag'
+" Programming
+Bundle 'vim-ruby/vim-ruby'
+Bundle 'tpope/vim-rails'
+Bundle 'tpope/vim-endwise'
 Bundle 'tpope/vim-cucumber'
+Bundle 'thoughtbot/vim-rspec'
+Bundle 'gregsexton/MatchTag'
 Bundle 'matchit.zip'
-Bundle 'Syntastic'
-Bundle 'Tagbar'
-Bundle 'ack.vim'
+Bundle 'rking/ag.vim'
 Bundle 'scrooloose/nerdcommenter'
-
+Bundle 'scrooloose/syntastic'
 
 " Git integration
 Bundle 'git.zip'
-Bundle 'fugitive.vim'
+Bundle 'tpope/vim-fugitive'
 Bundle 'airblade/vim-gitgutter'
 
 " Navigation
+Bundle 'bling/vim-airline'
 Bundle 'The-NERD-tree'
+Bundle 'danro/rename.vim'
+Bundle 'kien/ctrlp.vim'
 
 " Indentation
 Bundle 'IndentAnything'

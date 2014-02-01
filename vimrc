@@ -15,6 +15,7 @@ endif
 set backspace=indent,eol,start
 set history=120             " keep 120 lines of command line history
 set autoindent              " auto indenting
+set autowrite               " Automatically :write before running commands
 set smartindent             " smart indenting
 set ruler                   " show the cursor position all the time
 set showcmd                 " display incomplete commands
@@ -40,7 +41,10 @@ set tabstop=2
 set shiftwidth=2
 set expandtab
 set smarttab
+
+" Numbers
 set number
+set numberwidth=4
 
 " Don't use Ex mode, use Q for formatting
 map Q gq
@@ -58,10 +62,6 @@ endif
 " Only do this part when compiled with support for autocommands.
 if has("autocmd")
 
-  " Enable file type detection.
-  " Use the default filetype settings, so that mail gets 'tw' set to 72,
-  " 'cindent' is on in C files, etc.
-  " Also load indent files, to automatically do language-dependent indenting.
   filetype plugin indent on
 
   " Put these in an autocmd group, so that we can delete them easily.
@@ -97,18 +97,13 @@ set complete=.,t
 " Remove highlight after search
 nmap <silent> ,/ :nohlsearch<CR>
 
-autocmd FileType xml,xsd,xslt,xhtml,html,php,aspvbs inoremap <buffer> <M-&> &amp;
-autocmd FileType xml,xsd,xslt,xhtml,html,php,aspvbs inoremap <buffer> <M-<> &lt;
-autocmd FileType xml,xsd,xslt,xhtml,html,php,aspvbs inoremap <buffer> <M->> &gt;
-autocmd FileType xml,xsd,xslt,xhtml,html,php,aspvbs inoremap <buffer> <M-'> &apos;
-autocmd FileType xml,xsd,xslt,xhtml,html,php,aspvbs inoremap <buffer> <M-"> &quot;
-
+" File Types
 autocmd BufNewFile,BufRead *.html.haml set filetype=haml.ruby
 autocmd BufNewFile,BufRead *.thor set filetype=ruby
+autocmd BufRead,BufNewFile *.md setlocal textwidth=80
 
-" Always show statusline
-set laststatus=2
-set noruler
+" Treat <li> and <p> tags like the block tags they are
+let g:html_indent_tags = 'li\|p'
 
 " Color scheme settings
 colorscheme wombat256mod
@@ -128,10 +123,23 @@ map <F3> :NERDTreeToggle<CR>
 " CTags
 map <Leader>rt :!ctags --extra=+f -R *<CR><CR>
 map <C-\> :tnext<CR>
-nnoremap <silent> <Leader>b :TagbarToggle<CR>
 
-" Show buffer number, filetype, fileformat and fileencoding in statusline
-set statusline=[%n]\ [%f]\ %w%y%r%m[%{&fileformat}][%{&fileencoding}]\ %=\ %l/%L,%-5c\ %P\
+" vim-rspec mappings
+nnoremap <Leader>t :call RunCurrentSpecFile()<CR>
+nnoremap <Leader>s :call RunNearestSpec()<CR>
+nnoremap <Leader>l :call RunLastSpec()<CR>
+
+" Use The Silver Searcher https://github.com/ggreer/the_silver_searcher
+if executable('ag')
+  " Use Ag over Grep
+  set grepprg=ag\ --nogroup\ --nocolor
+
+  " Use ag in CtrlP for listing files. Lightning fast and respects .gitignore
+  let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
+
+  " ag is fast enough that CtrlP doesn't need to cache
+  let g:ctrlp_use_caching = 0
+endif
 
 "improve autocomplete menu color
 highlight Pmenu ctermbg=238 gui=bold
@@ -140,3 +148,4 @@ highlight Pmenu ctermbg=238 gui=bold
 if filereadable(expand("~/.vimrc.local"))
   source ~/.vimrc.local
 endif
+
