@@ -14,7 +14,7 @@ install wget
 install tree
 install ssh-copy-id
 
-install ack
+install ag
 install ctags
 install git
 install mysql
