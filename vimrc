@@ -99,6 +99,7 @@ nmap <silent> ,/ :nohlsearch<CR>
 
 " File Types
 autocmd BufNewFile,BufRead *.html.haml set filetype=haml.ruby
+autocmd BufNewFile,BufRead *.mobile.haml set filetype=haml.ruby
 autocmd BufNewFile,BufRead *.thor set filetype=ruby
 autocmd BufRead,BufNewFile *.md setlocal textwidth=80
 
