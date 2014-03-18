@@ -18,6 +18,7 @@ install ag
 install ctags
 install git
 install mysql
+install redis
 install sqlite
 install yajl
 install fswatch
@@ -25,7 +26,6 @@ install fswatch
 install rbenv
 install ruby-build
 install rbenv-gemset
-
 install node
 
 # Brew cask
@@ -51,7 +51,6 @@ cask install opera
 cask install adium
 cask install skype
 cask install dropbox
-cask install f-lux
 
 # Entertainment
 cask install spotify
@@ -61,6 +60,7 @@ cask install handbrake
 cask install send-to-kindle
 
 # Other
+cask install f-lux
 cask install truecrypt
 cask install appcleaner
 cask install disk-inventory-x
