@@ -25,6 +25,8 @@ Bundle 'matchit.zip'
 Bundle 'rking/ag.vim'
 Bundle 'scrooloose/nerdcommenter'
 Bundle 'scrooloose/syntastic'
+Bundle 'kchmck/vim-coffee-script'
+Bundle 'rizzatti/dash.vim'
 
 " Git integration
 Bundle 'git.zip'

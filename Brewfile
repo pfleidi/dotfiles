@@ -13,10 +13,12 @@ install watch
 install wget
 install tree
 install ssh-copy-id
+install gnupg
 
 install ag
 install ctags
 install git
+install git-flow
 install mysql
 install redis
 install sqlite
