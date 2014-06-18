@@ -125,6 +125,10 @@ map <F3> :NERDTreeToggle<CR>
 map <Leader>rt :!ctags --extra=+f -R *<CR><CR>
 map <C-\> :tnext<CR>
 
+" Gitgutter
+let g:gitgutter_realtime = 0
+let g:gitgutter_eager = 0
+
 " Use The Silver Searcher https://github.com/ggreer/the_silver_searcher
 if executable('ag')
   " Use Ag over Grep
