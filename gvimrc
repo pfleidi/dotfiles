@@ -31,7 +31,15 @@ imap <D-8> <Esc>8gt
 map  <D-9> 9gt
 imap <D-9> <Esc>9gt
 
-" Include local gvim config
+" Gitgutter colors
+highlight clear SignColumn
+highlight GitGutterAdd guifg=green guibg=#242424
+highlight GitGutterChange guifg=yellow guibg=#242424
+highlight GitGutterDelete guifg=red guibg=#242424
+highlight GitGutterChangeDelete guifg=orange guibg=#242424
+
+
+" include local gvim config
 if filereadable(expand("~/.vimrc.local"))
   source ~/.gvimrc.local
 endif
