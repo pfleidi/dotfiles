@@ -16,6 +16,7 @@ install ssh-copy-id
 install gnupg
 
 install ag
+install wrk
 install ctags
 install git
 install git-flow
