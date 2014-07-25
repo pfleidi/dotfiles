@@ -141,6 +141,9 @@ if executable('ag')
   let g:ctrlp_use_caching = 0
 endif
 
+" bind K to grep word under cursor
+nnoremap K :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
+
 "improve autocomplete menu color
 highlight Pmenu ctermbg=238 gui=bold
 
