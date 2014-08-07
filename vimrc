@@ -64,6 +64,16 @@ if has("autocmd")
 
   filetype plugin indent on
 
+  " File Types
+  autocmd BufNewFile,BufRead *.html.haml set filetype=haml.ruby
+  autocmd BufNewFile,BufRead *.mobile.haml set filetype=haml.ruby
+  autocmd BufNewFile,BufRead *.thor set filetype=ruby
+  autocmd BufRead,BufNewFile *.md setlocal textwidth=80
+
+  autocmd BufNewFile,BufRead Gemfile set filetype=ruby
+  autocmd BufNewFile,BufRead Vagrantfile set filetype=ruby
+  autocmd BufNewFile,BufRead Berksfile set filetype=ruby
+
   " Put these in an autocmd group, so that we can delete them easily.
   augroup vimrcEx
     au!
@@ -96,12 +106,6 @@ set complete=.,t
 
 " Remove highlight after search
 nmap <silent> ,/ :nohlsearch<CR>
-
-" File Types
-autocmd BufNewFile,BufRead *.html.haml set filetype=haml.ruby
-autocmd BufNewFile,BufRead *.mobile.haml set filetype=haml.ruby
-autocmd BufNewFile,BufRead *.thor set filetype=ruby
-autocmd BufRead,BufNewFile *.md setlocal textwidth=80
 
 " Treat <li> and <p> tags like the block tags they are
 let g:html_indent_tags = 'li\|p'
