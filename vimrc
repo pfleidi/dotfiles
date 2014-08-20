@@ -68,7 +68,6 @@ if has("autocmd")
   autocmd BufNewFile,BufRead *.html.haml set filetype=haml.ruby
   autocmd BufNewFile,BufRead *.mobile.haml set filetype=haml.ruby
   autocmd BufNewFile,BufRead *.thor set filetype=ruby
-  autocmd BufRead,BufNewFile *.md setlocal textwidth=80
 
   autocmd BufNewFile,BufRead Gemfile set filetype=ruby
   autocmd BufNewFile,BufRead Vagrantfile set filetype=ruby
