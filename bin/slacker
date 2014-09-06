@@ -1,0 +1,120 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'open-uri'
+require 'json'
+
+class SlackCommit
+  BASE_URL = 'https://slack.com/api'
+
+  def initialize(api_token)
+    @api_token = api_token
+  end
+
+  def post(args)
+    channel_list = args.fetch(:channels)
+    channels = get_channels(channel_list)
+
+    post_to_api(args.merge(:channels => channels))
+  end
+
+  private
+
+  attr_reader :api_token
+
+  def get_channels(channel_list)
+    channel_ids = get_channel_ids(channel_list)
+
+    channel_ids.join(',')
+  end
+
+  def get_channel_ids(channels)
+    post_channels = all_channels.select{ |c| channels.include?(c['name']) }
+
+    post_channels.map { |c| c['id'] }
+  end
+
+  def all_channels
+    response = open("#{BASE_URL}/channels.list?token=#{api_token}")
+
+    JSON.parse(response.read)['channels']
+  end
+
+  def post_to_api(args)
+    title = args.fetch(:title)
+    channels = args.fetch(:channels)
+    comment = args.fetch(:comment)
+
+    content = args[:content]
+    file = args[:file]
+
+    command = 'curl'
+    command += " -F channels='#{channels}' \ "
+    command += " -F initial_comment='#{comment}' \ "
+    command += " -F token='#{api_token}' \ "
+    command += " -F title='#{title}' \ "
+    command += " -F file=@#{file}" if file
+
+    command += " -F content='#{content}' \ " if content
+    command += " #{BASE_URL}/files.upload -o /dev/null"
+
+    system(command)
+  end
+
+end
+
+# Parse Input
+
+options = {
+  :token => ENV['SLACK_TOKEN'],
+  :channels => ENV.fetch('SLACK_CHANNELS') { [] },
+  :comment => '',
+  :title => ''
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{ __FILE__ } [options] file1 file2 file3"
+
+  opts.on('-f', '--file FILE', 'The file to upload') do |file|
+    options[:file] = file
+  end
+
+  opts.on('-t', '--title TITLE', 'The title of your post') do |title|
+    options[:title] = title
+  end
+
+  opts.on('-c', '--comment COMMENT', 'The initial comment of your post') do |comment|
+    options[:comment] = comment
+  end
+
+  opts.on('--token TOKEN', 'Your Slack API token (optional)') do |token|
+    options[:token] = token
+  end
+
+  opts.on('-c', '--channels #c1,#c2,#c3', Array, 'List of channels to post to') do |channels|
+    options[:channels] = channels
+  end
+
+end
+
+parser.parse!
+
+options[:content] = ARGF.read
+
+if options[:token].nil?
+  puts "You either need to set SLACK_TOKEN in your shell environment or use the --token option"
+  puts parser.help
+
+  exit 1
+end
+
+if options[:channels].empty?
+  puts "You either need to set SLACK_CHANNELS in your shell environment or use the --channels option"
+  puts parser.help
+
+  exit 1
+end
+
+slack_commit = SlackCommit.new(options.fetch(:token))
+slack_commit.post(options)
+

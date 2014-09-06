@@ -64,6 +64,15 @@ if has("autocmd")
 
   filetype plugin indent on
 
+  " File Types
+  autocmd BufNewFile,BufRead *.html.haml set filetype=haml.ruby
+  autocmd BufNewFile,BufRead *.mobile.haml set filetype=haml.ruby
+  autocmd BufNewFile,BufRead *.thor set filetype=ruby
+
+  autocmd BufNewFile,BufRead Gemfile set filetype=ruby
+  autocmd BufNewFile,BufRead Vagrantfile set filetype=ruby
+  autocmd BufNewFile,BufRead Berksfile set filetype=ruby
+
   " Put these in an autocmd group, so that we can delete them easily.
   augroup vimrcEx
     au!
@@ -96,12 +105,6 @@ set complete=.,t
 
 " Remove highlight after search
 nmap <silent> ,/ :nohlsearch<CR>
-
-" File Types
-autocmd BufNewFile,BufRead *.html.haml set filetype=haml.ruby
-autocmd BufNewFile,BufRead *.mobile.haml set filetype=haml.ruby
-autocmd BufNewFile,BufRead *.thor set filetype=ruby
-autocmd BufRead,BufNewFile *.md setlocal textwidth=80
 
 " Treat <li> and <p> tags like the block tags they are
 let g:html_indent_tags = 'li\|p'
@@ -140,6 +143,9 @@ if executable('ag')
   " ag is fast enough that CtrlP doesn't need to cache
   let g:ctrlp_use_caching = 0
 endif
+
+" bind K to grep word under cursor
+nnoremap K :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 
 "improve autocomplete menu color
 highlight Pmenu ctermbg=238 gui=bold

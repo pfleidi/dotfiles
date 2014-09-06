@@ -17,7 +17,7 @@ export DISABLE_AUTO_UPDATE="true"
 # export DISABLE_LS_COLORS="true"
 
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-plugins=(git osx brew ruby rvm gem bundler zsh-syntax-highlighting)
+plugins=(git osx brew brew-cask ruby gem bundler zsh-syntax-highlighting)
 
 # Needs https://github.com/zsh-users/zsh-syntax-highlighting/
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor)

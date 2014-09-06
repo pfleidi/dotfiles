@@ -20,6 +20,8 @@ Bundle 'vim-ruby/vim-ruby'
 Bundle 'tpope/vim-rails'
 Bundle 'tpope/vim-endwise'
 Bundle 'tpope/vim-cucumber'
+Bundle 'tpope/vim-bundler'
+Bundle 'skalnik/vim-vroom'
 Bundle 'gregsexton/MatchTag'
 Bundle 'matchit.zip'
 Bundle 'rking/ag.vim'
@@ -51,7 +53,6 @@ Bundle 'haml.zip'
 Bundle 'slim-template/vim-slim'
 
 " Color schemes
-Bundle 'Solarized'
 Bundle 'Wombat'
 Bundle 'wombat256.vim'
 

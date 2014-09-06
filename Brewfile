@@ -2,6 +2,8 @@ update
 upgrade
 
 install imagemagick --build-from-source
+install qt
+install ffmpeg
 
 install openssl
 install nmap

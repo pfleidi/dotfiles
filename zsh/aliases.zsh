@@ -8,6 +8,6 @@ alias less="less -r"
 alias more="less -r"
 alias ut='bsdtar -vx -f'
 alias spk='RAILS_ENV=test bin/rspec'
-alias cuke='RAILS_ENV=test bin/spring cucumber'
+alias cuke='RAILS_ENV=test bin/spring cucumber --format progress'
 alias vi=vim
 
