@@ -17,7 +17,7 @@ export DISABLE_AUTO_UPDATE="true"
 # export DISABLE_LS_COLORS="true"
 
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-plugins=(git osx brew ruby rbenv gem bundler zsh-syntax-highlighting)
+plugins=(git osx brew ruby rvm gem bundler zsh-syntax-highlighting)
 
 # Needs https://github.com/zsh-users/zsh-syntax-highlighting/
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor)
@@ -83,3 +83,5 @@ type fortune &>/dev/null && fortune -a
 type grc &>/dev/null && source $HOME/.zsh/grc_aliases.zsh
 
 # EOF
+
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"

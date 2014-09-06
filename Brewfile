@@ -26,9 +26,6 @@ install sqlite
 install yajl
 install fswatch
 
-install rbenv
-install ruby-build
-install rbenv-gemset
 install node
 
 # Brew cask
