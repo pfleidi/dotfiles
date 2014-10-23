@@ -46,6 +46,9 @@ set smarttab
 set number
 set numberwidth=4
 
+" highlight the 80 column
+set colorcolumn=80
+
 " Don't use Ex mode, use Q for formatting
 map Q gq
 
