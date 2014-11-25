@@ -135,6 +135,9 @@ map <C-\> :tnext<CR>
 let g:gitgutter_realtime = 0
 let g:gitgutter_eager = 0
 
+" Syntastic
+let g:syntastic_cucumber_checkers = []
+
 " Use The Silver Searcher https://github.com/ggreer/the_silver_searcher
 if executable('ag')
   " Use Ag over Grep
