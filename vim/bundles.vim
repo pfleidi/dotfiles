@@ -29,6 +29,7 @@ Bundle 'scrooloose/nerdcommenter'
 Bundle 'scrooloose/syntastic'
 Bundle 'kchmck/vim-coffee-script'
 Bundle 'rizzatti/dash.vim'
+Bundle 'lmeijvogel/vim-yaml-helper'
 
 " Git integration
 Bundle 'git.zip'

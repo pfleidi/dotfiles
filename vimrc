@@ -46,6 +46,9 @@ set smarttab
 set number
 set numberwidth=4
 
+" highlight the 80 column
+set colorcolumn=80
+
 " Don't use Ex mode, use Q for formatting
 map Q gq
 
@@ -131,6 +134,9 @@ map <C-\> :tnext<CR>
 " Gitgutter
 let g:gitgutter_realtime = 0
 let g:gitgutter_eager = 0
+
+" Syntastic
+let g:syntastic_cucumber_checkers = []
 
 " Use The Silver Searcher https://github.com/ggreer/the_silver_searcher
 if executable('ag')
