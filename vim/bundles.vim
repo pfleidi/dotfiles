@@ -30,6 +30,7 @@ Bundle 'scrooloose/syntastic'
 Bundle 'kchmck/vim-coffee-script'
 Bundle 'rizzatti/dash.vim'
 Bundle 'lmeijvogel/vim-yaml-helper'
+Bundle 'leafgarland/typescript-vim'
 
 " Git integration
 Bundle 'git.zip'
