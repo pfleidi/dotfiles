@@ -21,16 +21,12 @@ Bundle 'tpope/vim-rails'
 Bundle 'tpope/vim-endwise'
 Bundle 'tpope/vim-cucumber'
 Bundle 'tpope/vim-bundler'
-Bundle 'skalnik/vim-vroom'
 Bundle 'gregsexton/MatchTag'
 Bundle 'matchit.zip'
 Bundle 'dyng/ctrlsf.vim'
 Bundle 'scrooloose/nerdcommenter'
 Bundle 'scrooloose/syntastic'
-Bundle 'kchmck/vim-coffee-script'
-Bundle 'rizzatti/dash.vim'
 Bundle 'lmeijvogel/vim-yaml-helper'
-Bundle 'leafgarland/typescript-vim'
 
 " Git integration
 Bundle 'git.zip'
@@ -44,15 +40,14 @@ Bundle 'danro/rename.vim'
 Bundle 'kien/ctrlp.vim'
 
 " Indentation
-Bundle 'IndentAnything'
-Bundle 'Javascript-Indentation'
 Bundle 'trailing-whitespace'
+Bundle 'jason0x43/vim-js-indent'
 
 " Syntax
 Bundle 'groenewege/vim-less'
 Bundle 'tpope/vim-markdown'
 Bundle 'haml.zip'
-Bundle 'slim-template/vim-slim'
+Bundle 'leafgarland/typescript-vim'
 
 " Color schemes
 Bundle 'Wombat'
