@@ -138,6 +138,13 @@ let g:gitgutter_eager = 0
 " Syntastic
 let g:syntastic_cucumber_checkers = []
 
+" CtrlSF
+nmap <C-F>f <Plug>CtrlSFPrompt
+vmap <C-F>f <Plug>CtrlSFVwordPath
+vmap <C-F>F <Plug>CtrlSFVwordExec
+nmap <C-F>n <Plug>CtrlSFCwordPath
+nmap <C-F>p <Plug>CtrlSFPwordPath
+
 " Use The Silver Searcher https://github.com/ggreer/the_silver_searcher
 if executable('ag')
   " Use Ag over Grep
