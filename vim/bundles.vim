@@ -46,8 +46,8 @@ Bundle 'jason0x43/vim-js-indent'
 " Syntax
 Bundle 'groenewege/vim-less'
 Bundle 'tpope/vim-markdown'
+Bundle 'HerringtonDarkholme/yats'
 Bundle 'haml.zip'
-Bundle 'leafgarland/typescript-vim'
 
 " Color schemes
 Bundle 'Wombat'
