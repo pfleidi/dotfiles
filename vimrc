@@ -137,6 +137,8 @@ let g:gitgutter_eager = 0
 
 " Syntastic
 let g:syntastic_cucumber_checkers = []
+" Use local tsconfig.json
+let g:syntastic_typescript_tsc_fname = ''
 
 " CtrlSF
 nmap <C-F>f <Plug>CtrlSFPrompt
@@ -158,7 +160,7 @@ if executable('ag')
 endif
 
 " CtrlP config
-let g:ctrlp_match_window = 'results:100'
+let g:ctrlp_match_window = 'results:50'
 
 " bind K to grep word under cursor
 nnoremap K :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
