@@ -25,9 +25,11 @@ Bundle 'matchit.zip'
 Bundle 'scrooloose/nerdcommenter'
 Bundle 'scrooloose/syntastic'
 Bundle 'lmeijvogel/vim-yaml-helper'
+Bundle 'editorconfig/editorconfig-vim'
 
 " JavaScript
 Bundle 'pangloss/vim-javascript'
+Bundle 'alunny/pegjs-vim'
 
 " TypeScript
 Bundle 'leafgarland/typescript-vim'
@@ -47,7 +49,7 @@ Bundle 'kien/ctrlp.vim'
 Bundle 'dyng/ctrlsf.vim'
 
 " Indentation
-Bundle 'trailing-whitespace'
+Bundle 'ntpeters/vim-better-whitespace'
 
 " Misc Syntax
 Bundle 'groenewege/vim-less'
