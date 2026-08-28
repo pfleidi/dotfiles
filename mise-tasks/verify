@@ -32,7 +32,7 @@ mise bootstrap repos status --missing
 test -r "$HOME/.oh-my-zsh/oh-my-zsh.sh"
 
 section "Homebrew tools"
-for tool in nvim go gopls rg delta fd tree-sitter starship direnv herdr claude codex; do
+for tool in nvim go gopls rg delta fd tree-sitter starship direnv herdr lazygit git-lfs tmux claude codex; do
   check_homebrew_tool "$tool"
 done
 
@@ -47,6 +47,10 @@ starship --version
 starship prompt --status 0 --jobs 0 --path "$repo" >/dev/null
 direnv version
 herdr --version
+lazygit --version
+git lfs version
+tmux -V
+test -r "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 test -x "$(dirname "$(realpath "$brew_bin/codex")")/codex-code-mode-host"
 claude --version
 codex --version

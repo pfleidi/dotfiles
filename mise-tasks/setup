@@ -1,9 +1,0 @@
-#!/bin/sh
-#MISE description="Apply the declarative machine bootstrap"
-set -eu
-
-script=$(realpath "$0")
-repo=$(dirname "$(dirname "$script")")
-cd "$repo"
-
-mise bootstrap --yes

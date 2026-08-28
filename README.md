@@ -7,6 +7,7 @@ This repository manages a small macOS development environment with mise:
 - Neovim with LazyVim, Go support, and CodeDiff
 - Vim as a lightweight plugin-free fallback
 - Go, gopls, ripgrep, delta, fd, and Tree-sitter
+- LazyGit and Git LFS
 - Oh My Zsh, Starship, direnv, and tmux
 - explicit Zsh, Git, LazyGit, Herdr, Vim, Neovim, and mise links
 
@@ -66,8 +67,6 @@ mise bootstrap --yes
 mise bootstrap status
 mise run verify
 ```
-
-`mise run setup` is an optional alias for `mise bootstrap --yes`. The native bootstrap command remains the source of truth.
 
 Bootstrap is convergent: packages, repositories, and links already in the declared state are left alone. Mise installs or safely updates a clean `~/.oh-my-zsh` checkout from its official repository and refuses a conflicting or locally modified checkout. Oh My Zsh's own updater is disabled so mise remains its only update path. The final `bootstrap` task re-applies Herdr's Claude and Codex integrations; Herdr's install command is idempotent. It never logs either agent in.
 
@@ -213,11 +212,14 @@ Mise owns only these destinations:
 ~/.config/herdr/config.toml
 ~/.config/git/config
 ~/.config/starship.toml
+~/Library/Application Support/lazygit/config.yml
 ~/.vimrc
 ~/.tmux.conf
 ~/.zprofile
 ~/.zshrc
 ~/.zsh
+~/.bin
+~/.gemrc
 ```
 
 It does not link all of `~/.config` or turn every repository-root file into a home dotfile.
