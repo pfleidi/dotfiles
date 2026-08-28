@@ -1,74 +1,84 @@
-update
-upgrade
-
-install imagemagick --build-from-source
-install qt
-install ffmpeg
-
-install openssl
-install nmap
-install unrar
-install tmux
-install htop-osx
-install reattach-to-user-namespace
-install watch
-install wget
-install tree
-install ssh-copy-id
-install gnupg
-
-install ag
-install wrk
-install ctags
-install git
-install git-flow
-install mysql
-install redis
-install sqlite
-install yajl
-install fswatch
-
-install node
-
-# Brew cask
-
-tap phinze/homebrew-cask
-install brew-cask
-
-#  Development
-cask install iterm2
-cask install macvim
-cask install sequel-pro
-cask install github
-cask install virtualbox
-cask install vagrant
-cask install gitx-l
-
-# Browsers
-cask install google-chrome
-cask install firefox
-cask install opera
-
-# Communication
-cask install adium
-cask install skype
-cask install dropbox
-
-# Entertainment
-cask install spotify
-cask install vlc
-cask install mplayerx
-cask install handbrake
-cask install send-to-kindle
-
-# Other
-cask install f-lux
-cask install truecrypt
-cask install appcleaner
-cask install disk-inventory-x
-cask install superduper
-cask install nvalt
-cask install teamviewer
-cask install filezilla
-
-cleanup
+tap "anomalyco/tap", trusted: true
+tap "docker/tap", trusted: true
+tap "entireio/tap", trusted: true
+brew "awscli"
+brew "cloudflared"
+brew "colima"
+brew "curl"
+brew "direnv"
+brew "fish"
+brew "fzf"
+brew "node"
+brew "gemini-cli"
+brew "gh"
+brew "git"
+brew "git-delta"
+brew "go"
+brew "golangci-lint"
+brew "herdr"
+brew "htop"
+brew "jq"
+brew "lazygit"
+brew "libyaml"
+brew "mise"
+brew "mkcert"
+brew "mysql"
+brew "ossp-uuid"
+brew "pnpm"
+brew "postgresql@14"
+brew "rbenv"
+brew "redis"
+brew "ripgrep"
+brew "rust"
+brew "shellcheck"
+brew "starship"
+brew "tmux"
+brew "tree"
+brew "vim"
+brew "wget"
+brew "yq"
+brew "zsh"
+brew "zsh-syntax-highlighting"
+brew "anomalyco/tap/opencode", trusted: true
+cask "1password-cli"
+cask "arc"
+cask "claude"
+cask "claude-code@latest"
+cask "cloudflare-warp"
+cask "codex"
+cask "copilot-cli"
+cask "entireio/tap/entire@nightly"
+cask "firefox"
+cask "gcloud-cli"
+cask "gemini"
+cask "ghostty"
+cask "google-chrome"
+cask "insomnia"
+cask "iterm2"
+cask "keepingyouawake"
+cask "linear"
+cask "obsidian"
+cask "opencode-desktop"
+cask "rectangle"
+cask "docker/tap/sbx"
+cask "slack"
+go "golang.org/x/tools/cmd/deadcode"
+go "github.com/go-delve/delve/cmd/dlv"
+go "github.com/entireio/cli/cmd/entire"
+go "entire.io/cmd/entire-backup"
+go "entire.io/cmd/entire-ci"
+go "entire.io/cmd/entire-ci-webhooks"
+go "entire.io/cmd/entire-core"
+go "entire.io/cmd/entire-deploy"
+go "entire.io/cmd/entire-grant"
+go "entire.io/cmd/entire-org"
+go "entire.io/cmd/entire-project"
+go "entire.io/cmd/entire-repo"
+go "entire.io/cmd/entire-server"
+go "entire.io/cmd/entire-webhook"
+go "entire.io/cmd/entiredb"
+go "entire.io/cmd/entiredbctl"
+go "github.com/entireio/cli/cmd/git-remote-entire"
+go "golang.org/x/tools/gopls"
+go "gotest.tools/gotestsum"
+npm "@mariozechner/pi-coding-agent"
