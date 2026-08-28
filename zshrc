@@ -1,3 +1,14 @@
+typeset -U path PATH
+path=("$HOME/.local/bin" /opt/homebrew/bin /opt/homebrew/sbin $path)
+
+if command -v brew >/dev/null 2>&1; then
+  eval "$(brew shellenv)"
+fi
+
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
+fi
+
 # options below can be overridden in ~/.zshrc.local
 
 # Path to your oh-my-zsh configuration.
@@ -56,9 +67,6 @@ setopt hist_ignore_space
 # Load ENV Variables
 export EDITOR=vim
 export PAGER=less
-
-# Put custom $PATH settings into ~/.zprofile or ~/.zshrc.local
-export PATH=$PATH:$HOME/.bin
 
 #077 would be more secure, but 022 is generally quite realistic
 umask 022

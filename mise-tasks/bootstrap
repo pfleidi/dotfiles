@@ -1,0 +1,7 @@
+#!/bin/sh
+#MISE description="Install Herdr agent integrations"
+set -eu
+
+herdr integration install claude
+herdr integration install codex
+herdr integration status

@@ -1,0 +1,24 @@
+min_version = "2026.7.4"
+
+[settings]
+lockfile = true
+
+[tools]
+go = "latest"
+neovim = "latest"
+ripgrep = "latest"
+fd = "latest"
+tree-sitter = "latest"
+herdr = "latest"
+claude = "latest"
+"github:openai/codex" = "latest"
+"go:golang.org/x/tools/gopls" = { version = "latest", depends = ["go"] }
+
+[bootstrap.packages]
+"brew-cask:ghostty" = { version = "latest", os = "macos" }
+
+[dotfiles]
+"~/.config/mise/config.toml" = "mise.toml"
+"~/.config/mise/tasks" = "mise-tasks"
+"~/.zshrc" = "zshrc"
+"~/.zsh" = "zsh"
