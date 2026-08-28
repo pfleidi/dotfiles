@@ -20,5 +20,6 @@ claude = "latest"
 [dotfiles]
 "~/.config/mise/config.toml" = "mise.toml"
 "~/.config/mise/tasks" = "mise-tasks"
+"~/.config/herdr/config.toml" = "config/herdr/config.toml"
 "~/.zshrc" = "zshrc"
 "~/.zsh" = "zsh"
