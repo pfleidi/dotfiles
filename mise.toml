@@ -20,6 +20,7 @@ claude = "latest"
 "brew-cask:ghostty" = { version = "latest", os = "macos" }
 "brew:zsh-syntax-highlighting" = { version = "latest", os = "macos" }
 "brew:tmux" = { version = "latest", os = "macos" }
+"brew:vim" = { version = "latest", os = "macos" }
 
 [bootstrap.repos]
 "~/.oh-my-zsh" = { url = "https://github.com/ohmyzsh/ohmyzsh.git", ref = "master" }
@@ -31,6 +32,7 @@ claude = "latest"
 "~/.config/git/config" = "config/git/config"
 "~/.config/nvim" = "config/nvim"
 "~/.config/starship.toml" = "config/starship.toml"
+"~/.vimrc" = "config/vim/vimrc"
 "~/.tmux.conf" = "tmux.conf"
 "~/.zprofile" = "zprofile"
 "~/.zshrc" = "zshrc"

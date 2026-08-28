@@ -1,0 +1,101 @@
+set nocompatible
+
+let mapleader = " "
+let maplocalleader = " "
+
+packadd! editorconfig
+packadd! matchit
+packadd! comment
+packadd! nohlsearch
+packadd! netrw
+
+filetype plugin indent on
+syntax enable
+
+set termguicolors
+set background=dark
+colorscheme retrobox
+
+set number
+set numberwidth=4
+set colorcolumn=80
+set cursorline
+set signcolumn=yes
+set linebreak
+set breakindent
+set scrolloff=4
+set sidescrolloff=4
+set splitbelow
+set splitright
+set mouse=a
+
+set autoindent
+set autowrite
+set backspace=indent,eol,start
+set autoread
+set history=1000
+set showcmd
+set showmatch
+set matchtime=2
+set incsearch
+set hlsearch
+set ignorecase
+set smartcase
+
+set expandtab
+set tabstop=2
+set shiftwidth=2
+set softtabstop=2
+
+set clipboard=unnamedplus
+set undofile
+set backup
+set writebackup
+
+let s:state_home = empty($XDG_STATE_HOME) ? expand("~/.local/state") : $XDG_STATE_HOME
+let s:state_dir = s:state_home . "/vim"
+call mkdir(s:state_dir . "/backup", "p", 0700)
+call mkdir(s:state_dir . "/swap", "p", 0700)
+call mkdir(s:state_dir . "/undo", "p", 0700)
+let &backupdir = s:state_dir . "/backup//"
+let &directory = s:state_dir . "/swap//"
+let &undodir = s:state_dir . "/undo//"
+unlet s:state_dir
+unlet s:state_home
+
+set autocomplete
+set autocompletedelay=150
+set completeopt=menuone,fuzzy,popup
+set wildmenu
+set wildmode=noselect:lastused,full
+set wildoptions=pum,fuzzy
+
+set path=.,**
+set wildignore+=*/.git/*,*/node_modules/*,*/vendor/*,*/tmp/*
+set grepprg=rg\ --vimgrep\ --smart-case
+set grepformat=%f:%l:%c:%m
+
+nnoremap Q gq
+nnoremap <silent> <leader>e <Cmd>Lexplore<CR>
+nnoremap <leader><leader> :find<Space>
+nnoremap <leader>/ :silent grep!<Space>
+nnoremap <silent> <leader>g :silent grep! <C-R><C-W><CR><Cmd>copen<CR>
+nnoremap <silent> <leader>q <Cmd>copen<CR>
+nnoremap <silent> [q <Cmd>cprevious<CR>
+nnoremap <silent> ]q <Cmd>cnext<CR>
+
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l
+
+augroup dotfiles
+  autocmd!
+  autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | execute "normal! g`\"" | endif
+  autocmd BufEnter,CursorHold,FocusGained * if &buftype == "" | checktime | endif
+  autocmd BufNewFile,BufRead *.thor,Berksfile setfiletype ruby
+augroup END
+
+if filereadable(expand("~/.vimrc.local"))
+  source ~/.vimrc.local
+endif

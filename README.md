@@ -5,9 +5,10 @@ This repository manages a small macOS development environment with mise:
 - Ghostty
 - Herdr with Claude Code and Codex integrations
 - Neovim with LazyVim, Go support, and CodeDiff
+- Vim as a lightweight plugin-free fallback
 - Go, gopls, ripgrep, fd, and Tree-sitter
 - Oh My Zsh, Starship, direnv, and tmux
-- explicit Zsh, Git, Herdr, Neovim, and mise links
+- explicit Zsh, Git, Herdr, Vim, Neovim, and mise links
 
 The mise lockfile pins resolved tool versions and download metadata. The checked-in LazyVim lockfile does the same for editor plugins.
 
@@ -147,6 +148,19 @@ LazyVim's default Snacks picker and explorer provide these functions. No Telesco
 
 Neovim checks for external changes after `CursorHold`. A clean buffer reloads; an unsaved buffer keeps its edits and shows Neovim's conflict warning. LazyVim uses the macOS clipboard through `unnamedplus` in a normal UI session.
 
+### Vim fallback
+
+Vim uses its built-in fuzzy completion, file explorer, commenting, EditorConfig, and extended `%` matching. Ripgrep fills the quickfix list.
+
+| Action | Key |
+| --- | --- |
+| Find a file | `Space Space` |
+| Enter a project search | `Space /` |
+| Search for the word under the cursor | `Space g` |
+| Explorer | `Space e` |
+| Open quickfix | `Space q` |
+| Previous/next quickfix item | `[q` / `]q` |
+
 ### Herdr navigation
 
 ```text
@@ -199,6 +213,7 @@ Mise owns only these destinations:
 ~/.config/herdr/config.toml
 ~/.config/git/config
 ~/.config/starship.toml
+~/.vimrc
 ~/.tmux.conf
 ~/.zprofile
 ~/.zshrc
@@ -209,7 +224,7 @@ It does not link all of `~/.config` or turn every repository-root file into a ho
 
 ## Legacy configuration
 
-The old broad `bootstrap.sh` is deleted. `Brewfile` is an installed-package snapshot, not an active bootstrap input. Vundle is not installed or updated by mise. The old Vim files remain available during the Neovim transition, but Neovim is the default editor.
+The old broad `bootstrap.sh` is deleted. `Brewfile` is an installed-package snapshot, not an active bootstrap input. Vim uses only packages shipped with Vim itself; Vundle and the old third-party plugin tree are no longer active. Neovim remains the default editor.
 
 The migration intentionally removed unused GNU Screen, IRB, RSpec, RVM, and Silver Searcher configuration. The small `gemrc` remains for possible Ruby work on another machine. No old Vim mappings or preferences were copied into LazyVim; candidates to reconsider later include relative line numbers, search highlighting preferences, and any frequently missed text-editing mappings.
 
@@ -217,9 +232,9 @@ The migration intentionally removed unused GNU Screen, IRB, RSpec, RVM, and Silv
 
 The Brewfile records what Homebrew, Go, and npm reported as installed on this machine. Nothing in it is automatically installed, upgraded, or removed by mise.
 
-- Required bootstrap ownership: `mise` remains the prerequisite; `ghostty`, `tmux`, and `zsh-syntax-highlighting` are declared as native packages.
+- Required bootstrap ownership: `mise` remains the prerequisite; `ghostty`, `tmux`, `vim`, and `zsh-syntax-highlighting` are declared as native packages.
 - Replaced by mise: `go`, `herdr`, `ripgrep`, `starship`, `direnv`, `claude`, `claude-code@latest`, `codex`, and `golang.org/x/tools/gopls`. Existing Homebrew/cask/Go copies remain installed but are shadowed after shell activation.
-- Retained but unrelated to this migration: `gh`, `git`, `git-delta`, `golangci-lint`, `rbenv`, `vim`, `zsh`, `1password-cli`, and the Entire CLI/tap entries.
+- Retained but unrelated to this migration: `gh`, `git`, `git-delta`, `golangci-lint`, `rbenv`, `zsh`, `1password-cli`, and the Entire CLI/tap entries.
 - Installed but deliberately not activated by this setup: `fzf`, `lazygit`, `github.com/go-delve/delve/cmd/dlv`, and `gotest.tools/gotestsum`.
 - Left unresolved and untouched: `anomalyco/tap`, `docker/tap`, `awscli`, `cloudflared`, `colima`, `curl`, `fish`, `node`, `gemini-cli`, `htop`, `jq`, `libyaml`, `mkcert`, `mysql`, `ossp-uuid`, `pnpm`, `postgresql@14`, `redis`, `rust`, `shellcheck`, `tree`, `wget`, `yq`, `anomalyco/tap/opencode`, `arc`, `cloudflare-warp`, `copilot-cli`, `firefox`, `gcloud-cli`, `gemini`, `google-chrome`, `insomnia`, `iterm2`, `keepingyouawake`, `linear`, `obsidian`, `opencode-desktop`, `rectangle`, `docker/tap/sbx`, `slack`, `golang.org/x/tools/cmd/deadcode`, `@mariozechner/pi-coding-agent`, and the work-specific `entire.io` Go commands.
 

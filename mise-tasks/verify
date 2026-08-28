@@ -47,6 +47,18 @@ herdr --version
 claude --version
 codex --version
 
+section "Vim"
+test "$(realpath "$HOME/.vimrc")" = "$repo/config/vim/vimrc"
+vim -Nu "$repo/config/vim/vimrc" -n -es \
+  "+call assert_equal('retrobox', g:colors_name)" \
+  "+call assert_equal('rg --vimgrep --smart-case', &grepprg)" \
+  "+call assert_equal(2, exists(':Lexplore'))" \
+  "+call assert_equal(1, exists('g:loaded_EditorConfig'))" \
+  "+call assert_equal(1, exists('g:loaded_matchit'))" \
+  "+call assert_false(empty(maparg('gc', 'n')))" \
+  "+if !empty(v:errors) | cquit | endif" \
+  +qa
+
 section "Neovim"
 nvim --headless "+lua assert(LazyVim.has_extra('lang.go'))" "+lua assert(LazyVim.opts('nvim-lspconfig').servers.gopls.mason == false)" "+Lazy! load codediff.nvim" "+lua assert(vim.fn.exists(':CodeDiff') == 2)" +qa
 
