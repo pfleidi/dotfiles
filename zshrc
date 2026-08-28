@@ -5,7 +5,7 @@ export ZSH=$HOME/.oh-my-zsh
 
 # Set to the name theme to load.
 # Look in ~/.oh-my-zsh/themes/
-export ZSH_THEME="kennethreitz"
+# export ZSH_THEME="avit"
 
 # Set to this to use case-sensitive completion
 export CASE_SENSITIVE="true"
@@ -17,7 +17,7 @@ export DISABLE_AUTO_UPDATE="true"
 # export DISABLE_LS_COLORS="true"
 
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-plugins=(git osx brew brew-cask ruby gem bundler zsh-syntax-highlighting)
+plugins=(git gh brew zsh-syntax-highlighting ssh-agent kubectl tmux direnv entire)
 
 # Needs https://github.com/zsh-users/zsh-syntax-highlighting/
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor)
@@ -78,11 +78,10 @@ fi
 zstyle '*' hosts $hosts
 #zstyle ':completion:*:*:*:*:*' menu complete
 
-# show fortune cookie
-type fortune &>/dev/null && fortune -a
 # load grc aliases for colored shell output
-type grc &>/dev/null && source $HOME/.zsh/grc_aliases.zsh
+# type grc &>/dev/null && source $HOME/.zsh/grc_aliases.zsh
+
+command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init -)"
+command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
 
 # EOF
-
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"
