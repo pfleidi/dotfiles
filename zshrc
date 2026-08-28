@@ -30,14 +30,15 @@ export LANG=en_US.UTF-8
 [[ -s $HOME/.zshrc.local ]] && source "$HOME/.zshrc.local"
 
 # load oh-my-zsh
-source $ZSH/oh-my-zsh.sh
+[[ -r $ZSH/oh-my-zsh.sh ]] && source "$ZSH/oh-my-zsh.sh"
 
 # ============== Custom tweaks below this line ==============
 
 # Aliases
-source $HOME/.zsh/aliases.zsh
+[[ -r $HOME/.zsh/aliases.zsh ]] && source "$HOME/.zsh/aliases.zsh"
 # Key Bindings
-source $HOME/.zsh/keybindings.zsh
+[[ -r $HOME/.zsh/keybindings.zsh ]] && source "$HOME/.zsh/keybindings.zsh"
+[[ -r $HOME/.zsh/secrets.zsh ]] && source "$HOME/.zsh/secrets.zsh"
 
 #History Settings
 HISTFILE=~/.zsh_history
