@@ -1,0 +1,13 @@
+[user]
+	name = Your Name
+	email = you@example.com
+	signingkey = ssh-ed25519 YOUR_PUBLIC_KEY
+
+[gpg]
+	format = ssh
+
+[gpg "ssh"]
+	program = /path/to/ssh-signing-program
+
+[commit]
+	gpgsign = true

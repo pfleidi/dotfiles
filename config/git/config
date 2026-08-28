@@ -1,0 +1,66 @@
+[include]
+	path = ~/.config/git/config.local
+
+[alias]
+	co = checkout
+	ci = commit
+	st = status
+	br = branch
+	hist = log --pretty=format:"%h %ad | %s%d [%an]" --graph --date=short
+	type = cat-file -t
+	dump = cat-file -p
+	rmrb = "push --delete origin"
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr)%C(bold blue)<%an>%Creset' --abbrev-commit
+	branch-cleanup = !git branch --merged main | grep -v main | xargs -n 1 git branch -d
+	prune-branches = !git branch | grep -v "main" | xargs git branch -D
+
+[color]
+	branch = auto
+	diff = auto
+	status = auto
+
+[color "branch"]
+	current = yellow reverse
+	local = yellow
+	remote = green
+
+[color "diff"]
+	meta = yellow bold
+	frag = magenta bold
+	old = red bold
+	new = green bold
+
+[color "status"]
+	added = yellow
+	changed = green
+	untracked = cyan
+
+[rerere]
+	enabled = true
+	autoupdate = true
+
+[push]
+	default = simple
+
+[credential]
+	helper = osxkeychain
+
+[core]
+	excludesfile = ~/.config/git/ignore
+	autocrlf = input
+	pager = delta --dark
+
+[init]
+	defaultBranch = main
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+
+[delta]
+	side-by-side = true
+
+[diff]
+	algorithm = histogram
