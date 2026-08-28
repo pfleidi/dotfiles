@@ -1,0 +1,57 @@
+#!/bin/sh
+#MISE description="Verify the managed development environment"
+set -eu
+
+section() {
+  printf '\n== %s ==\n' "$1"
+}
+
+check_tool() {
+  tool=$1
+  active=$(command -v "$tool")
+  managed=$(mise which "$tool")
+  printf '%s\n' "$active"
+  printf '%s\n' "$managed"
+  test "$(realpath "$active")" = "$(realpath "$managed")"
+}
+
+script=$(realpath "$0")
+repo=$(dirname "$(dirname "$script")")
+cd "$repo"
+
+section "mise"
+mise --version
+mise tasks validate --errors-only
+test "$(realpath "$HOME/.config/mise/config.toml")" = "$repo/mise.toml"
+test -f "$repo/mise.lock"
+
+section "managed tools"
+for tool in nvim go gopls rg fd tree-sitter herdr claude codex; do
+  check_tool "$tool"
+done
+
+nvim --version
+go version
+gopls version
+rg --version
+fd --version
+tree-sitter --version
+herdr --version
+claude --version
+codex --version
+
+section "Neovim"
+nvim --headless "+lua assert(LazyVim.has_extra('lang.go'))" "+lua assert(LazyVim.opts('nvim-lspconfig').servers.gopls.mason == false)" "+Lazy! load codediff.nvim" "+lua assert(vim.fn.exists(':CodeDiff') == 2)" +qa
+
+section "Herdr"
+herdr config check
+integration_status=$(herdr integration status)
+printf '%s\n' "$integration_status"
+printf '%s\n' "$integration_status" | rg '^claude: current '
+printf '%s\n' "$integration_status" | rg '^codex: current '
+
+section "bootstrap"
+mise bootstrap status
+
+section "Git diff"
+git diff --check
