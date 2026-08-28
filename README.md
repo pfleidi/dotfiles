@@ -41,7 +41,7 @@ fi
 brew install mise
 ```
 
-Mise must exist before this repository can bootstrap the rest of the machine. Current mise no longer supports the older `mise bootstrap --from ...` flags, so clone the repository first and bootstrap from its real checkout path:
+Mise must exist before this repository can bootstrap the rest of the machine. Clone the repository first and bootstrap from its real checkout path:
 
 ```sh
 git clone https://github.com/pfleidi/dotfiles.git "$HOME/dotfiles"
@@ -71,13 +71,13 @@ mise run verify
 
 Bootstrap is convergent: packages, repositories, links, and locked tools already in the declared state are left alone. Mise installs or safely updates a clean `~/.oh-my-zsh` checkout from its official repository and refuses a conflicting or locally modified checkout. Oh My Zsh's own updater is disabled so mise remains its only update path. The final `bootstrap` task re-applies Herdr's Claude and Codex integrations; Herdr's install command is idempotent. It never logs either agent in.
 
-Do not use `--force-dotfiles` during migration. If a destination conflicts, stop and move it under:
+Do not use `--force-dotfiles`. If a destination conflicts, stop and move it under:
 
 ```text
 ~/.local/state/dotfiles-backups/<timestamp>/
 ```
 
-Then rerun the dry-run. The current migration backup is `~/.local/state/dotfiles-backups/20260828-140334/`.
+Then rerun the dry-run.
 
 ## Updates
 
@@ -109,7 +109,7 @@ After a fresh bootstrap, run `claude` and `codex` interactively if either CLI st
 
 ## Rollback
 
-Each migration concern is kept in a focused Git commit. Revert the unwanted commit, inspect the new plan, and reapply the declared state:
+Changes are kept in focused Git commits. Revert the unwanted commit, inspect the new plan, and reapply the declared state:
 
 ```sh
 git revert <commit>
@@ -160,8 +160,6 @@ Vim uses its built-in fuzzy completion, file explorer, commenting, EditorConfig,
 | Explorer | `Space e` |
 | Open quickfix | `Space q` |
 | Previous/next quickfix item | `[q` / `]q` |
-
-Inside the tree, press `Enter` to open a file or expand a directory, `-` to move to the parent directory, and `gh` to toggle hidden files. Press `i` to cycle through netrw's other listing styles.
 
 ### Herdr navigation
 
@@ -224,23 +222,14 @@ Mise owns only these destinations:
 
 It does not link all of `~/.config` or turn every repository-root file into a home dotfile.
 
-## Legacy configuration
-
-The old broad `bootstrap.sh` is deleted. `Brewfile` is an installed-package snapshot, not an active bootstrap input. Vim uses only packages shipped with Vim itself; Vundle, the old third-party plugin tree, and the unused GUI configuration are removed. Neovim remains the default editor.
-
-The migration intentionally removed unused GNU Screen, IRB, RSpec, RVM, and Silver Searcher configuration. The small `gemrc` remains for possible Ruby work on another machine. No old Vim mappings or preferences were copied into LazyVim; candidates to reconsider later include relative line numbers, search highlighting preferences, and any frequently missed text-editing mappings.
-
-## Brewfile audit
+## Package inventory
 
 The Brewfile records what Homebrew, Go, and npm reported as installed on this machine. Nothing in it is automatically installed, upgraded, or removed by mise.
 
-- Required bootstrap ownership: `mise` remains the prerequisite; `ghostty`, `tmux`, `vim`, and `zsh-syntax-highlighting` are declared as native packages.
-- Replaced by mise: `go`, `herdr`, `ripgrep`, `starship`, `direnv`, `claude`, `claude-code@latest`, `codex`, and `golang.org/x/tools/gopls`. Existing Homebrew/cask/Go copies remain installed but are shadowed after shell activation.
-- Retained but unrelated to this migration: `gh`, `git`, `git-delta`, `golangci-lint`, `rbenv`, `zsh`, `1password-cli`, and the Entire CLI/tap entries.
-- Installed but deliberately not activated by this setup: `fzf`, `lazygit`, `github.com/go-delve/delve/cmd/dlv`, and `gotest.tools/gotestsum`.
-- Left unresolved and untouched: `anomalyco/tap`, `docker/tap`, `awscli`, `cloudflared`, `colima`, `curl`, `fish`, `node`, `gemini-cli`, `htop`, `jq`, `libyaml`, `mkcert`, `mysql`, `ossp-uuid`, `pnpm`, `postgresql@14`, `redis`, `rust`, `shellcheck`, `tree`, `wget`, `yq`, `anomalyco/tap/opencode`, `arc`, `cloudflare-warp`, `copilot-cli`, `firefox`, `gcloud-cli`, `gemini`, `google-chrome`, `insomnia`, `iterm2`, `keepingyouawake`, `linear`, `obsidian`, `opencode-desktop`, `rectangle`, `docker/tap/sbx`, `slack`, `golang.org/x/tools/cmd/deadcode`, `@mariozechner/pi-coding-agent`, and the work-specific `entire.io` Go commands.
-
-The unresolved group is inventory, not a recommendation. Redundant installations can be reviewed and removed separately.
+- `mise` is the bootstrap prerequisite.
+- Ghostty, tmux, Vim, and Zsh syntax highlighting are native packages.
+- Go, gopls, Neovim, ripgrep, fd, Tree-sitter, Starship, direnv, Herdr, Claude Code, and Codex are mise tools.
+- Everything else in the Brewfile is inventory only and remains outside this setup.
 
 ## References
 
