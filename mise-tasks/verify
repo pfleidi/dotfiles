@@ -30,7 +30,7 @@ mise bootstrap repos status --missing
 test -r "$HOME/.oh-my-zsh/oh-my-zsh.sh"
 
 section "managed tools"
-for tool in nvim go gopls rg fd tree-sitter starship direnv herdr claude codex; do
+for tool in nvim go gopls rg delta fd tree-sitter starship direnv herdr claude codex; do
   check_tool "$tool"
 done
 
@@ -38,6 +38,7 @@ nvim --version
 go version
 gopls version
 rg --version
+delta --version
 fd --version
 tree-sitter --version
 starship --version

@@ -7,6 +7,7 @@ lockfile = true
 go = "latest"
 neovim = "latest"
 ripgrep = "latest"
+delta = "latest"
 fd = "latest"
 tree-sitter = "latest"
 starship = "latest"

@@ -6,7 +6,7 @@ This repository manages a small macOS development environment with mise:
 - Herdr with Claude Code and Codex integrations
 - Neovim with LazyVim, Go support, and CodeDiff
 - Vim as a lightweight plugin-free fallback
-- Go, gopls, ripgrep, fd, and Tree-sitter
+- Go, gopls, ripgrep, delta, fd, and Tree-sitter
 - Oh My Zsh, Starship, direnv, and tmux
 - explicit Zsh, Git, Herdr, Vim, Neovim, and mise links
 
@@ -237,7 +237,7 @@ Because the inventory is complete, `brew-install` can also install copies of too
 
 - `mise` is the bootstrap prerequisite.
 - Ghostty, tmux, Vim, and Zsh syntax highlighting are native packages.
-- Go, gopls, Neovim, ripgrep, fd, Tree-sitter, Starship, direnv, Herdr, Claude Code, and Codex are mise tools.
+- Go, gopls, Neovim, ripgrep, delta, fd, Tree-sitter, Starship, direnv, Herdr, Claude Code, and Codex are mise tools.
 - Everything else in the Brewfile is managed only when `brew-install` is run explicitly.
 
 ## References
