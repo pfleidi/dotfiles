@@ -62,6 +62,7 @@ let s:state_dir = s:state_home . "/vim"
 call mkdir(s:state_dir . "/backup", "p", 0700)
 call mkdir(s:state_dir . "/swap", "p", 0700)
 call mkdir(s:state_dir . "/undo", "p", 0700)
+let g:netrw_home = s:state_dir
 let &backupdir = s:state_dir . "/backup//"
 let &directory = s:state_dir . "/swap//"
 let &undodir = s:state_dir . "/undo//"
