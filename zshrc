@@ -1,9 +1,7 @@
-typeset -U path PATH
-path=("$HOME/.local/bin" /opt/homebrew/bin /opt/homebrew/sbin $path)
+typeset -U path PATH fpath FPATH
+path=("$HOME/.local/bin" $path)
 
-if command -v brew >/dev/null 2>&1; then
-  eval "$(brew shellenv)"
-fi
+[[ -d "$HOMEBREW_PREFIX/share/zsh/site-functions" ]] && fpath=("$HOMEBREW_PREFIX/share/zsh/site-functions" $fpath)
 
 if command -v mise >/dev/null 2>&1; then
   eval "$(mise activate zsh)"
@@ -13,6 +11,25 @@ fi
 
 # Path to your oh-my-zsh configuration.
 export ZSH=$HOME/.oh-my-zsh
+
+zsh_cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zsh
+if [[ ! -d $zsh_cache_dir/oh-my-zsh || ! -d $zsh_cache_dir/completions ]]; then
+  mkdir -p "$zsh_cache_dir/oh-my-zsh" "$zsh_cache_dir/completions"
+fi
+ZSH_CACHE_DIR=$zsh_cache_dir/oh-my-zsh
+ZSH_COMPDUMP=$zsh_cache_dir/.zcompdump-$HOST-$ZSH_VERSION
+
+entire_completion=$zsh_cache_dir/completions/_entire
+if (( $+commands[entire] )) && [[ ! -s $entire_completion || $commands[entire] -nt $entire_completion ]]; then
+  entire_completion_tmp=$entire_completion.$$
+  if entire completion zsh >| "$entire_completion_tmp"; then
+    mv "$entire_completion_tmp" "$entire_completion"
+  else
+    rm -f "$entire_completion_tmp"
+  fi
+fi
+fpath=("$zsh_cache_dir/completions" $fpath)
+unset entire_completion entire_completion_tmp zsh_cache_dir
 
 # Set to the name theme to load.
 # Look in ~/.oh-my-zsh/themes/
@@ -27,7 +44,9 @@ zstyle ':omz:update' mode disabled
 # export DISABLE_LS_COLORS="true"
 
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-plugins=(git gh brew ssh-agent kubectl tmux direnv entire)
+plugins=(git brew ssh-agent kubectl tmux direnv)
+
+zstyle ':omz:plugins:ssh-agent' lazy yes
 
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor)
 
@@ -54,9 +73,8 @@ HISTFILE=~/.zsh_history
 HISTSIZE=100000
 SAVEHIST=$HISTSIZE
 
-# completion cache
 zstyle ':completion:*' use-cache on
-zstyle ':completion:*' cache-path ~/.zsh/cache
+zstyle ':completion:*' cache-path "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/cache"
 
 # ignore duplicate entries
 setopt hist_ignore_all_dups
@@ -73,21 +91,6 @@ umask 022
 autoload -U url-quote-magic
 zle -N self-insert url-quote-magic
 
-# SSH Stuff
-if [ -r $HOME/.ssh/config ]; then
-  hosts=(`cat $HOME/.ssh/config | egrep '^Host.*' | sed "s/^Host[ ]*\(.*\)$/\1/"`)
-fi
-if [ -r /etc/hosts ]; then
-  hosts=( $hosts $(cat /etc/hosts | grep -v '^\#' | awk '{print $2}') )
-fi
-
-zstyle '*' hosts $hosts
-#zstyle ':completion:*:*:*:*:*' menu complete
-
-# load grc aliases for colored shell output
-# type grc &>/dev/null && source $HOME/.zsh/grc_aliases.zsh
-
-command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init -)"
 command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
 [[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 

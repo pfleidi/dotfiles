@@ -29,9 +29,14 @@ Install Homebrew with its current official installer:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-Follow the installer's printed `brew shellenv` instructions, then install mise:
+Load Homebrew in the current shell, then install mise. Homebrew uses `/opt/homebrew` on Apple Silicon and `/usr/local` on Intel Macs:
 
 ```sh
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+else
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
 brew install mise
 ```
 
@@ -94,6 +99,8 @@ The public Git config includes this ignored machine-local file:
 Use `config/git/config.local.example` as its shape. Identity and signing settings belong in the local file; this repository overrides its author email locally with the personal GitHub address.
 
 `zsh/secrets.zsh` is also ignored and sourced only when present. Its longer-term replacement is intentionally postponed. Claude and Codex login state, tokens, session databases, and generated Herdr integration files stay outside this repository.
+
+Zsh keeps completion state under `~/.cache/zsh`. Entire completion is regenerated only when the installed CLI is newer than the cached definition. Ruby version management is not initialized globally; use mise in Ruby projects or opt into rbenv from local shell configuration on machines that need it.
 
 After a fresh bootstrap, run `claude` and `codex` interactively if either CLI still needs authentication.
 
@@ -189,6 +196,7 @@ Mise owns only these destinations:
 ~/.config/nvim
 ~/.config/herdr/config.toml
 ~/.config/git/config
+~/.zprofile
 ~/.zshrc
 ~/.zsh
 ```
