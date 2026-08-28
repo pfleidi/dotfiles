@@ -6,7 +6,7 @@ This repository manages a small macOS development environment with mise:
 - Herdr with Claude Code and Codex integrations
 - Neovim with LazyVim, Go support, and CodeDiff
 - Go, gopls, ripgrep, fd, and Tree-sitter
-- Oh My Zsh
+- Oh My Zsh, Starship, direnv, and tmux
 - explicit Zsh, Git, Herdr, Neovim, and mise links
 
 The mise lockfile pins resolved tool versions and download metadata. The checked-in LazyVim lockfile does the same for editor plugins.
@@ -102,6 +102,8 @@ Use `config/git/config.local.example` as its shape. Identity and signing setting
 
 Zsh keeps completion state under `~/.cache/zsh`. Entire completion is regenerated only when the installed CLI is newer than the cached definition. Ruby version management is not initialized globally; use mise in Ruby projects or opt into rbenv from local shell configuration on machines that need it.
 
+Starship currently uses its upstream defaults, so there is no empty configuration file to manage. Its standard `~/.config/starship.toml` can be added when the prompt actually needs customization. Direnv also has no global configuration; its official Oh My Zsh plugin provides the shell hook.
+
 After a fresh bootstrap, run `claude` and `codex` interactively if either CLI still needs authentication.
 
 ## Rollback
@@ -196,6 +198,7 @@ Mise owns only these destinations:
 ~/.config/nvim
 ~/.config/herdr/config.toml
 ~/.config/git/config
+~/.tmux.conf
 ~/.zprofile
 ~/.zshrc
 ~/.zsh
@@ -213,9 +216,9 @@ The migration intentionally removed unused GNU Screen, IRB, RSpec, RVM, and Silv
 
 The Brewfile records what Homebrew, Go, and npm reported as installed on this machine. Nothing in it is automatically installed, upgraded, or removed by mise.
 
-- Required bootstrap ownership: `mise` remains the prerequisite; `ghostty` and `zsh-syntax-highlighting` are declared as native packages.
-- Replaced by mise: `go`, `herdr`, `ripgrep`, `claude`, `claude-code@latest`, `codex`, and `golang.org/x/tools/gopls`. Existing Homebrew/cask/Go copies remain installed but are shadowed after shell activation.
-- Retained but unrelated to this migration: `direnv`, `gh`, `git`, `git-delta`, `golangci-lint`, `rbenv`, `starship`, `tmux`, `vim`, `zsh`, `1password-cli`, and the Entire CLI/tap entries.
+- Required bootstrap ownership: `mise` remains the prerequisite; `ghostty`, `tmux`, and `zsh-syntax-highlighting` are declared as native packages.
+- Replaced by mise: `go`, `herdr`, `ripgrep`, `starship`, `direnv`, `claude`, `claude-code@latest`, `codex`, and `golang.org/x/tools/gopls`. Existing Homebrew/cask/Go copies remain installed but are shadowed after shell activation.
+- Retained but unrelated to this migration: `gh`, `git`, `git-delta`, `golangci-lint`, `rbenv`, `vim`, `zsh`, `1password-cli`, and the Entire CLI/tap entries.
 - Installed but deliberately not activated by this setup: `fzf`, `lazygit`, `github.com/go-delve/delve/cmd/dlv`, and `gotest.tools/gotestsum`.
 - Left unresolved and untouched: `anomalyco/tap`, `docker/tap`, `awscli`, `cloudflared`, `colima`, `curl`, `fish`, `node`, `gemini-cli`, `htop`, `jq`, `libyaml`, `mkcert`, `mysql`, `ossp-uuid`, `pnpm`, `postgresql@14`, `redis`, `rust`, `shellcheck`, `tree`, `wget`, `yq`, `anomalyco/tap/opencode`, `arc`, `cloudflare-warp`, `copilot-cli`, `firefox`, `gcloud-cli`, `gemini`, `google-chrome`, `insomnia`, `iterm2`, `keepingyouawake`, `linear`, `obsidian`, `opencode-desktop`, `rectangle`, `docker/tap/sbx`, `slack`, `golang.org/x/tools/cmd/deadcode`, `@mariozechner/pi-coding-agent`, and the work-specific `entire.io` Go commands.
 

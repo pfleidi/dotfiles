@@ -9,6 +9,8 @@ neovim = "latest"
 ripgrep = "latest"
 fd = "latest"
 tree-sitter = "latest"
+starship = "latest"
+direnv = "latest"
 herdr = "latest"
 claude = "latest"
 "github:openai/codex" = "latest"
@@ -17,6 +19,7 @@ claude = "latest"
 [bootstrap.packages]
 "brew-cask:ghostty" = { version = "latest", os = "macos" }
 "brew:zsh-syntax-highlighting" = { version = "latest", os = "macos" }
+"brew:tmux" = { version = "latest", os = "macos" }
 
 [bootstrap.repos]
 "~/.oh-my-zsh" = { url = "https://github.com/ohmyzsh/ohmyzsh.git", ref = "master" }
@@ -27,6 +30,7 @@ claude = "latest"
 "~/.config/herdr/config.toml" = "config/herdr/config.toml"
 "~/.config/git/config" = "config/git/config"
 "~/.config/nvim" = "config/nvim"
+"~/.tmux.conf" = "tmux.conf"
 "~/.zprofile" = "zprofile"
 "~/.zshrc" = "zshrc"
 "~/.zsh" = "zsh"

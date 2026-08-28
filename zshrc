@@ -1,5 +1,7 @@
 typeset -U path PATH fpath FPATH
 path=("$HOME/.local/bin" $path)
+path+=("$HOME/go/bin" "$HOME/.bin" "$HOME/.cargo/bin")
+export GOBIN=$HOME/go/bin
 
 [[ -d "$HOMEBREW_PREFIX/share/zsh/site-functions" ]] && fpath=("$HOMEBREW_PREFIX/share/zsh/site-functions" $fpath)
 
