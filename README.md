@@ -102,7 +102,7 @@ Use `config/git/config.local.example` as its shape. Identity and signing setting
 
 Zsh keeps completion state under `~/.cache/zsh`. Entire completion is regenerated only when the installed CLI is newer than the cached definition. Ruby version management is not initialized globally; use mise in Ruby projects or opt into rbenv from local shell configuration on machines that need it.
 
-Starship currently uses its upstream defaults, so there is no empty configuration file to manage. Its standard `~/.config/starship.toml` can be added when the prompt actually needs customization. Direnv also has no global configuration; its official Oh My Zsh plugin provides the shell hook.
+Starship uses the managed `~/.config/starship.toml` prompt configuration. Direnv has no global configuration; its official Oh My Zsh plugin provides the shell hook.
 
 After a fresh bootstrap, run `claude` and `codex` interactively if either CLI still needs authentication.
 
@@ -198,6 +198,7 @@ Mise owns only these destinations:
 ~/.config/nvim
 ~/.config/herdr/config.toml
 ~/.config/git/config
+~/.config/starship.toml
 ~/.tmux.conf
 ~/.zprofile
 ~/.zshrc

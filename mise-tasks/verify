@@ -41,6 +41,7 @@ rg --version
 fd --version
 tree-sitter --version
 starship --version
+starship prompt --status 0 --jobs 0 --path "$repo" >/dev/null
 direnv version
 herdr --version
 claude --version
