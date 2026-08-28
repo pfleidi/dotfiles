@@ -224,7 +224,7 @@ It does not link all of `~/.config` or turn every repository-root file into a ho
 
 ## Legacy configuration
 
-The old broad `bootstrap.sh` is deleted. `Brewfile` is an installed-package snapshot, not an active bootstrap input. Vim uses only packages shipped with Vim itself; Vundle and the old third-party plugin tree are no longer active. Neovim remains the default editor.
+The old broad `bootstrap.sh` is deleted. `Brewfile` is an installed-package snapshot, not an active bootstrap input. Vim uses only packages shipped with Vim itself; Vundle, the old third-party plugin tree, and the unused GUI configuration are removed. Neovim remains the default editor.
 
 The migration intentionally removed unused GNU Screen, IRB, RSpec, RVM, and Silver Searcher configuration. The small `gemrc` remains for possible Ruby work on another machine. No old Vim mappings or preferences were copied into LazyVim; candidates to reconsider later include relative line numbers, search highlighting preferences, and any frequently missed text-editing mappings.
 
