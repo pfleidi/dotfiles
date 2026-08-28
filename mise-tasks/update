@@ -1,0 +1,19 @@
+#!/bin/sh
+#MISE description="Update managed tools and LazyVim plugins"
+set -eu
+
+script=$(realpath "$0")
+repo=$(dirname "$(dirname "$script")")
+cd "$repo"
+
+printf '\n== mise tools ==\n'
+mise upgrade
+
+printf '\n== mise lockfile ==\n'
+mise lock --global
+
+printf '\n== LazyVim plugins ==\n'
+nvim --headless "+Lazy! sync" +qa
+
+printf '\n== verification ==\n'
+mise run verify
