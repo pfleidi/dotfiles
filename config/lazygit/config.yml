@@ -1,0 +1,6 @@
+git:
+  diffRenderers:
+    - name: unified
+      command: delta --paging=never --line-numbers
+    - name: side-by-side
+      command: delta --paging=never --side-by-side

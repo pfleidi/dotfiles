@@ -8,7 +8,7 @@ This repository manages a small macOS development environment with mise:
 - Vim as a lightweight plugin-free fallback
 - Go, gopls, ripgrep, delta, fd, and Tree-sitter
 - Oh My Zsh, Starship, direnv, and tmux
-- explicit Zsh, Git, Herdr, Vim, Neovim, and mise links
+- explicit Zsh, Git, LazyGit, Herdr, Vim, Neovim, and mise links
 
 The mise lockfile pins resolved tool versions and download metadata. The checked-in LazyVim lockfile does the same for editor plugins.
 
