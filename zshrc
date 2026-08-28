@@ -65,7 +65,7 @@ setopt hist_ignore_all_dups
 setopt hist_ignore_space
 
 # Load ENV Variables
-export EDITOR=vim
+export EDITOR=nvim
 export PAGER=less
 
 #077 would be more secure, but 022 is generally quite realistic
