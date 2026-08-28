@@ -1,0 +1,9 @@
+#!/bin/sh
+#MISE description="Install missing Brewfile packages without upgrading"
+set -eu
+
+script=$(realpath "$0")
+repo=$(dirname "$(dirname "$script")")
+cd "$repo"
+
+brew bundle install --file "$repo/Brewfile" --no-upgrade

@@ -1,0 +1,11 @@
+#!/bin/sh
+#MISE description="Snapshot installed Homebrew, Go, and npm packages"
+set -eu
+
+script=$(realpath "$0")
+repo=$(dirname "$(dirname "$script")")
+snapshot=$(mktemp "${TMPDIR:-/tmp}/dotfiles-brewfile.XXXXXX")
+trap 'rm -f "$snapshot"' EXIT HUP INT TERM
+
+brew bundle dump --file "$snapshot" --force --formula --cask --tap --go --npm --no-describe --no-restart
+mv "$snapshot" "$repo/Brewfile"

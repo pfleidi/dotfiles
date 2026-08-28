@@ -224,12 +224,21 @@ It does not link all of `~/.config` or turn every repository-root file into a ho
 
 ## Package inventory
 
-The Brewfile records what Homebrew, Go, and npm reported as installed on this machine. Nothing in it is automatically installed, upgraded, or removed by mise.
+The Brewfile is an opt-in inventory of Homebrew, Go, and npm packages. Normal bootstrap does not apply it.
+
+```sh
+mise run brew-install
+mise run brew-dump
+```
+
+`brew-install` installs missing entries without upgrading installed packages. `brew-dump` replaces the Brewfile with a successfully generated snapshot of the current machine. Neither task removes packages.
+
+Because the inventory is complete, `brew-install` can also install copies of tools owned by mise. Mise activation keeps the mise-managed executables first on `PATH`.
 
 - `mise` is the bootstrap prerequisite.
 - Ghostty, tmux, Vim, and Zsh syntax highlighting are native packages.
 - Go, gopls, Neovim, ripgrep, fd, Tree-sitter, Starship, direnv, Herdr, Claude Code, and Codex are mise tools.
-- Everything else in the Brewfile is inventory only and remains outside this setup.
+- Everything else in the Brewfile is managed only when `brew-install` is run explicitly.
 
 ## References
 
