@@ -52,6 +52,8 @@ test "$(realpath "$HOME/.vimrc")" = "$repo/config/vim/vimrc"
 vim -Nu "$repo/config/vim/vimrc" -n -es \
   "+call assert_equal('retrobox', g:colors_name)" \
   "+call assert_equal('rg --vimgrep --smart-case', &grepprg)" \
+  "+call assert_equal(0, &relativenumber)" \
+  "+call assert_equal(3, g:netrw_liststyle)" \
   "+call assert_equal(2, exists(':Lexplore'))" \
   "+call assert_equal(1, exists('g:loaded_EditorConfig'))" \
   "+call assert_equal(1, exists('g:loaded_matchit'))" \

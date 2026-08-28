@@ -161,6 +161,8 @@ Vim uses its built-in fuzzy completion, file explorer, commenting, EditorConfig,
 | Open quickfix | `Space q` |
 | Previous/next quickfix item | `[q` / `]q` |
 
+Inside the tree, press `Enter` to open a file or expand a directory, `-` to move to the parent directory, and `gh` to toggle hidden files. Press `i` to cycle through netrw's other listing styles.
+
 ### Herdr navigation
 
 ```text
