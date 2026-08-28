@@ -14,23 +14,10 @@ fi
 export ZSH=$HOME/.oh-my-zsh
 
 zsh_cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zsh
-if [[ ! -d $zsh_cache_dir/oh-my-zsh || ! -d $zsh_cache_dir/completions ]]; then
-  mkdir -p "$zsh_cache_dir/oh-my-zsh" "$zsh_cache_dir/completions"
-fi
+[[ -d $zsh_cache_dir/oh-my-zsh ]] || mkdir -p "$zsh_cache_dir/oh-my-zsh"
 ZSH_CACHE_DIR=$zsh_cache_dir/oh-my-zsh
 ZSH_COMPDUMP=$zsh_cache_dir/.zcompdump-$HOST-$ZSH_VERSION
-
-entire_completion=$zsh_cache_dir/completions/_entire
-if (( $+commands[entire] )) && [[ ! -s $entire_completion || $commands[entire] -nt $entire_completion ]]; then
-  entire_completion_tmp=$entire_completion.$$
-  if entire completion zsh >| "$entire_completion_tmp"; then
-    mv "$entire_completion_tmp" "$entire_completion"
-  else
-    rm -f "$entire_completion_tmp"
-  fi
-fi
-fpath=("$zsh_cache_dir/completions" $fpath)
-unset entire_completion entire_completion_tmp zsh_cache_dir
+unset zsh_cache_dir
 
 CASE_SENSITIVE="true"
 
@@ -54,11 +41,10 @@ export LANG=en_US.UTF-8
 
 # ============== Custom tweaks below this line ==============
 
-# Aliases
-[[ -r $HOME/.zsh/aliases.zsh ]] && source "$HOME/.zsh/aliases.zsh"
-# Key Bindings
-[[ -r $HOME/.zsh/keybindings.zsh ]] && source "$HOME/.zsh/keybindings.zsh"
-[[ -r $HOME/.zsh/secrets.zsh ]] && source "$HOME/.zsh/secrets.zsh"
+for zsh_rc in "$HOME"/.zsh/*.zsh(N); do
+  source "$zsh_rc"
+done
+unset zsh_rc
 
 #History Settings
 HISTFILE=~/.zsh_history
