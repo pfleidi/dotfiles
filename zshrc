@@ -1,7 +1,6 @@
 typeset -U path PATH fpath FPATH
 path=("$HOME/.local/bin" $path)
-path+=("$HOME/go/bin" "$HOME/.bin" "$HOME/.cargo/bin")
-export GOBIN=$HOME/go/bin
+path+=("$HOME/go/bin" "$HOME/.bin")
 
 [[ -d "$HOMEBREW_PREFIX/share/zsh/site-functions" ]] && fpath=("$HOMEBREW_PREFIX/share/zsh/site-functions" $fpath)
 
@@ -33,19 +32,10 @@ fi
 fpath=("$zsh_cache_dir/completions" $fpath)
 unset entire_completion entire_completion_tmp zsh_cache_dir
 
-# Set to the name theme to load.
-# Look in ~/.oh-my-zsh/themes/
-# export ZSH_THEME="avit"
-
-# Set to this to use case-sensitive completion
-export CASE_SENSITIVE="true"
+CASE_SENSITIVE="true"
 
 zstyle ':omz:update' mode disabled
 
-# Uncomment following line if you want to disable colors in ls
-# export DISABLE_LS_COLORS="true"
-
-# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 plugins=(git brew ssh-agent kubectl tmux direnv)
 
 zstyle ':omz:plugins:ssh-agent' lazy yes
@@ -85,6 +75,7 @@ setopt hist_ignore_space
 # Load ENV Variables
 export EDITOR=nvim
 export PAGER=less
+export LESS=-R
 
 #077 would be more secure, but 022 is generally quite realistic
 umask 022
