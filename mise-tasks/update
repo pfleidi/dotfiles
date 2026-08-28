@@ -6,6 +6,9 @@ script=$(realpath "$0")
 repo=$(dirname "$(dirname "$script")")
 cd "$repo"
 
+printf '\n== managed repositories ==\n'
+mise bootstrap repos update --yes
+
 printf '\n== mise tools ==\n'
 mise upgrade
 

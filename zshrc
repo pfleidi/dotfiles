@@ -21,16 +21,14 @@ export ZSH=$HOME/.oh-my-zsh
 # Set to this to use case-sensitive completion
 export CASE_SENSITIVE="true"
 
-# Comment this out to disable weekly auto-update checks
-export DISABLE_AUTO_UPDATE="true"
+zstyle ':omz:update' mode disabled
 
 # Uncomment following line if you want to disable colors in ls
 # export DISABLE_LS_COLORS="true"
 
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-plugins=(git gh brew zsh-syntax-highlighting ssh-agent kubectl tmux direnv entire)
+plugins=(git gh brew ssh-agent kubectl tmux direnv entire)
 
-# Needs https://github.com/zsh-users/zsh-syntax-highlighting/
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor)
 
 # Locale settings (utf-8)
@@ -91,5 +89,6 @@ zstyle '*' hosts $hosts
 
 command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init -)"
 command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
+[[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # EOF

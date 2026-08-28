@@ -25,6 +25,10 @@ mise tasks validate --errors-only
 test "$(realpath "$HOME/.config/mise/config.toml")" = "$repo/mise.toml"
 test -f "$repo/mise.lock"
 
+section "managed repositories"
+mise bootstrap repos status --missing
+test -r "$HOME/.oh-my-zsh/oh-my-zsh.sh"
+
 section "managed tools"
 for tool in nvim go gopls rg fd tree-sitter herdr claude codex; do
   check_tool "$tool"

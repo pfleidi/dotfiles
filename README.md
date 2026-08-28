@@ -6,33 +6,45 @@ This repository manages a small macOS development environment with mise:
 - Herdr with Claude Code and Codex integrations
 - Neovim with LazyVim, Go support, and CodeDiff
 - Go, gopls, ripgrep, fd, and Tree-sitter
+- Oh My Zsh
 - explicit Zsh, Git, Herdr, Neovim, and mise links
 
 The mise lockfile pins resolved tool versions and download metadata. The checked-in LazyVim lockfile does the same for editor plugins.
 
-This repository deliberately does not manage credentials, agent sessions, SSH material, Neovim data/state/cache, Zed, Oh My Zsh itself, every installed Homebrew package, or unrelated macOS preferences. It does not configure an editor AI plugin, debugger UI, Git difftool, mergetool, or visual merge tool.
+This repository deliberately does not manage credentials, agent sessions, SSH material, Neovim data/state/cache, Zed, every installed Homebrew package, or unrelated macOS preferences. It does not configure an editor AI plugin, debugger UI, Git difftool, mergetool, or visual merge tool.
 
-## Prerequisites
+## Fresh macOS setup
 
-Mise must already be installed because it cannot bootstrap itself. macOS also needs Xcode Command Line Tools for Git and a C compiler:
+Start with Xcode Command Line Tools, which provide Git and a C compiler:
 
 ```sh
 xcode-select --install
-curl https://mise.run | sh
 ```
 
-The Xcode command opens an Apple installation dialog when the tools are missing. Complete that dialog before continuing.
+The command opens an Apple installation dialog when the tools are missing. Complete it before continuing.
 
-Current mise no longer supports the older `mise bootstrap --from ...` flags. Clone the repository first, then bootstrap from its real checkout path:
+Install Homebrew with its current official installer:
+
+```sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Follow the installer's printed `brew shellenv` instructions, then install mise:
+
+```sh
+brew install mise
+```
+
+Mise must exist before this repository can bootstrap the rest of the machine. Current mise no longer supports the older `mise bootstrap --from ...` flags, so clone the repository first and bootstrap from its real checkout path:
 
 ```sh
 git clone https://github.com/pfleidi/dotfiles.git "$HOME/dotfiles"
 cd "$HOME/dotfiles"
 
-~/.local/bin/mise bootstrap --dry-run
-~/.local/bin/mise bootstrap --yes
-~/.local/bin/mise bootstrap status
-~/.local/bin/mise run verify
+mise bootstrap --dry-run
+mise bootstrap --yes
+mise bootstrap status
+mise run verify
 ```
 
 The `$HOME/dotfiles` destination is only an example. Dotfile sources are relative to `mise.toml`, so the checkout can live anywhere.
@@ -51,7 +63,7 @@ mise run verify
 
 `mise run setup` is an optional alias for `mise bootstrap --yes`. The native bootstrap command remains the source of truth.
 
-Bootstrap is convergent: packages, links, and locked tools that are already present are left alone. The final `bootstrap` task re-applies Herdr's Claude and Codex integrations; Herdr's install command is idempotent. It never logs either agent in.
+Bootstrap is convergent: packages, repositories, links, and locked tools already in the declared state are left alone. Mise installs or safely updates a clean `~/.oh-my-zsh` checkout from its official repository and refuses a conflicting or locally modified checkout. Oh My Zsh's own updater is disabled so mise remains its only update path. The final `bootstrap` task re-applies Herdr's Claude and Codex integrations; Herdr's install command is idempotent. It never logs either agent in.
 
 Do not use `--force-dotfiles` during migration. If a destination conflicts, stop and move it under:
 
@@ -69,7 +81,7 @@ Bootstrap installs the locked versions; it does not upgrade everything. Updates 
 mise run update
 ```
 
-The task upgrades configured mise tools, refreshes the global lockfile, synchronizes LazyVim plugins, runs verification, and leaves every change visible to Git. It never commits or pushes.
+The task updates managed repositories, upgrades configured mise tools, refreshes the global lockfile, synchronizes LazyVim plugins, runs verification, and leaves every change visible to Git. It never commits or pushes.
 
 ## Local and private configuration
 
@@ -193,9 +205,9 @@ The migration intentionally removed unused GNU Screen, IRB, RSpec, RVM, and Silv
 
 The Brewfile records what Homebrew, Go, and npm reported as installed on this machine. Nothing in it is automatically installed, upgraded, or removed by mise.
 
-- Required bootstrap ownership: `mise` remains the prerequisite; `ghostty` is declared as the native cask.
+- Required bootstrap ownership: `mise` remains the prerequisite; `ghostty` and `zsh-syntax-highlighting` are declared as native packages.
 - Replaced by mise: `go`, `herdr`, `ripgrep`, `claude`, `claude-code@latest`, `codex`, and `golang.org/x/tools/gopls`. Existing Homebrew/cask/Go copies remain installed but are shadowed after shell activation.
-- Retained but unrelated to this migration: `direnv`, `gh`, `git`, `git-delta`, `golangci-lint`, `rbenv`, `starship`, `tmux`, `vim`, `zsh`, `zsh-syntax-highlighting`, `1password-cli`, and the Entire CLI/tap entries.
+- Retained but unrelated to this migration: `direnv`, `gh`, `git`, `git-delta`, `golangci-lint`, `rbenv`, `starship`, `tmux`, `vim`, `zsh`, `1password-cli`, and the Entire CLI/tap entries.
 - Installed but deliberately not activated by this setup: `fzf`, `lazygit`, `github.com/go-delve/delve/cmd/dlv`, and `gotest.tools/gotestsum`.
 - Left unresolved and untouched: `anomalyco/tap`, `docker/tap`, `awscli`, `cloudflared`, `colima`, `curl`, `fish`, `node`, `gemini-cli`, `htop`, `jq`, `libyaml`, `mkcert`, `mysql`, `ossp-uuid`, `pnpm`, `postgresql@14`, `redis`, `rust`, `shellcheck`, `tree`, `wget`, `yq`, `anomalyco/tap/opencode`, `arc`, `cloudflare-warp`, `copilot-cli`, `firefox`, `gcloud-cli`, `gemini`, `google-chrome`, `insomnia`, `iterm2`, `keepingyouawake`, `linear`, `obsidian`, `opencode-desktop`, `rectangle`, `docker/tap/sbx`, `slack`, `golang.org/x/tools/cmd/deadcode`, `@mariozechner/pi-coding-agent`, and the work-specific `entire.io` Go commands.
 

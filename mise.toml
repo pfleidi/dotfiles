@@ -16,6 +16,10 @@ claude = "latest"
 
 [bootstrap.packages]
 "brew-cask:ghostty" = { version = "latest", os = "macos" }
+"brew:zsh-syntax-highlighting" = { version = "latest", os = "macos" }
+
+[bootstrap.repos]
+"~/.oh-my-zsh" = { url = "https://github.com/ohmyzsh/ohmyzsh.git", ref = "master" }
 
 [dotfiles]
 "~/.config/mise/config.toml" = "mise.toml"
