@@ -61,7 +61,7 @@ vim -Nu "$repo/config/vim/vimrc" -n -es \
   +qa
 
 section "Neovim"
-nvim --headless "+lua assert(LazyVim.has_extra('lang.go'))" "+lua assert(LazyVim.opts('nvim-lspconfig').servers.gopls.mason == false)" "+Lazy! load codediff.nvim" "+lua assert(vim.fn.exists(':CodeDiff') == 2)" +qa
+nvim --headless "+lua assert(not vim.wo.relativenumber)" "+lua assert(LazyVim.has_extra('lang.go'))" "+lua assert(LazyVim.opts('nvim-lspconfig').servers.gopls.mason == false)" "+Lazy! load codediff.nvim" "+lua assert(vim.fn.exists(':CodeDiff') == 2)" +qa
 
 section "Herdr"
 herdr config check
