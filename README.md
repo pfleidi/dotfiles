@@ -10,7 +10,7 @@ This repository manages a small macOS development environment with mise:
 - Oh My Zsh, Starship, direnv, and tmux
 - explicit Zsh, Git, LazyGit, Herdr, Vim, Neovim, and mise links
 
-The mise lockfile pins resolved tool versions and download metadata. The checked-in LazyVim lockfile does the same for editor plugins.
+The checked-in LazyVim lockfile pins editor plugin versions.
 
 This repository deliberately does not manage credentials, agent sessions, SSH material, Neovim data/state/cache, Zed, every installed Homebrew package, or unrelated macOS preferences. It does not configure an editor AI plugin, debugger UI, Git difftool, mergetool, or visual merge tool.
 
@@ -69,7 +69,7 @@ mise run verify
 
 `mise run setup` is an optional alias for `mise bootstrap --yes`. The native bootstrap command remains the source of truth.
 
-Bootstrap is convergent: packages, repositories, links, and locked tools already in the declared state are left alone. Mise installs or safely updates a clean `~/.oh-my-zsh` checkout from its official repository and refuses a conflicting or locally modified checkout. Oh My Zsh's own updater is disabled so mise remains its only update path. The final `bootstrap` task re-applies Herdr's Claude and Codex integrations; Herdr's install command is idempotent. It never logs either agent in.
+Bootstrap is convergent: packages, repositories, and links already in the declared state are left alone. Mise installs or safely updates a clean `~/.oh-my-zsh` checkout from its official repository and refuses a conflicting or locally modified checkout. Oh My Zsh's own updater is disabled so mise remains its only update path. The final `bootstrap` task re-applies Herdr's Claude and Codex integrations; Herdr's install command is idempotent. It never logs either agent in.
 
 Do not use `--force-dotfiles`. If a destination conflicts, stop and move it under:
 
@@ -81,13 +81,13 @@ Then rerun the dry-run.
 
 ## Updates
 
-Bootstrap installs the locked versions; it does not upgrade everything. Updates are explicit:
+Bootstrap installs missing packages; it does not upgrade everything. Updates are explicit:
 
 ```sh
 mise run update
 ```
 
-The task updates managed repositories, upgrades configured mise tools, refreshes the global lockfile, synchronizes LazyVim plugins, runs verification, and leaves every change visible to Git. It never commits or pushes.
+The task updates managed repositories and declared Homebrew packages, synchronizes LazyVim plugins, runs verification, and leaves every change visible to Git. It never commits or pushes.
 
 ## Local and private configuration
 
@@ -233,11 +233,10 @@ mise run brew-dump
 
 `brew-install` installs missing entries without upgrading installed packages. `brew-dump` replaces the Brewfile with a successfully generated snapshot of the current machine. Neither task removes packages.
 
-Because the inventory is complete, `brew-install` can also install copies of tools owned by mise. Mise activation keeps the mise-managed executables first on `PATH`.
+The bootstrap package list is the minimal development environment. The Brewfile is the complete machine inventory.
 
 - `mise` is the bootstrap prerequisite.
-- Ghostty, tmux, Vim, and Zsh syntax highlighting are native packages.
-- Go, gopls, Neovim, ripgrep, delta, fd, Tree-sitter, Starship, direnv, Herdr, Claude Code, and Codex are mise tools.
+- Homebrew owns every package in the bootstrap.
 - Everything else in the Brewfile is managed only when `brew-install` is run explicitly.
 
 ## References
