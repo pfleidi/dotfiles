@@ -13,8 +13,6 @@ This repository manages a small macOS development environment with mise:
 
 The checked-in LazyVim lockfile pins editor plugin versions.
 
-This repository deliberately does not manage credentials, agent sessions, SSH material, Neovim data/state/cache, Zed, every installed Homebrew package, or unrelated macOS preferences. It does not configure an editor AI plugin, debugger UI, Git difftool, mergetool, or visual merge tool.
-
 ## Fresh macOS setup
 
 Start with Xcode Command Line Tools, which provide Git and a C compiler:
@@ -119,127 +117,16 @@ mise run verify
 
 Mise converges declared links but does not remove a link whose declaration disappeared in a reverted commit. Inspect such a destination before removing or relinking it. Backed-up symlinks can be restored with `cp -P` from the backup directory.
 
-## First day
-
-### Start a project workspace
-
-```sh
-cd <project>
-herdr
-```
-
-Keep Neovim in one pane, Codex or Claude in another, and tests, logs, or a second agent in the remaining panes.
-
-### LazyVim navigation
-
-| Action | Key |
-| --- | --- |
-| Find files | `Space Space` |
-| Grep project | `Space /` |
-| Explorer | `Space e` |
-| Document symbols | `Space s s` |
-| Workspace symbols | `Space s S` |
-| Definition | `g d` |
-| References | `g r` |
-| Implementation | `g I` |
-
-LazyVim's default Snacks picker and explorer provide these functions. No Telescope, fzf-lua, or neo-tree replacement is configured.
-
-Neovim checks for external changes after `CursorHold`. A clean buffer reloads; an unsaved buffer keeps its edits and shows Neovim's conflict warning. LazyVim uses the macOS clipboard through `unnamedplus` in a normal UI session.
-
-### Vim fallback
-
-Vim uses its built-in fuzzy completion, file explorer, commenting, EditorConfig, and extended `%` matching. Ripgrep fills the quickfix list.
-
-| Action | Key |
-| --- | --- |
-| Find a file | `Space Space` |
-| Enter a project search | `Space /` |
-| Search for the word under the cursor | `Space g` |
-| Explorer | `Space e` |
-| Open quickfix | `Space q` |
-| Previous/next quickfix item | `[q` / `]q` |
-
-### Herdr navigation
-
-```text
-Ctrl-H/J/K/L        Neovim windows
-Ctrl-Alt-H/J/K/L    Herdr panes
-F12                 Herdr prefix
-```
-
-Press `F12`, then `?` for Herdr's active key map.
-
-### Review branch changes
-
-Use the real base for the current repository: `main`, `master`, a release branch, or an upstream remote branch.
-
-```vim
-:CodeDiff <base>...
-:CodeDiff <base>...HEAD
-:CodeDiff history <base>..HEAD --reverse
-```
-
-| Action | Key |
-| --- | --- |
-| Previous/next change | `[c` / `]c` |
-| Previous/next file | `[f` / `]f` |
-| Toggle inline/side-by-side | `t` |
-| Open the real working file | `gf` |
-| Close | `q` |
-
-Historical Git buffers are snapshots and may not have a live LSP client. Use `gf` to open the corresponding working file for gopls navigation.
-
-For agent-made commits, ask the agent to create small coherent commits, then review them oldest-first. Commit behavior remains controlled by the prompt given to that agent; this setup does not enable automatic commits globally.
-
-### Ask the running agent
-
-```sh
-herdr agent list
-herdr agent prompt <target> "<question>"
-```
-
-Use the agent name shown by `herdr agent list` as `<target>`. The prompt command talks to the existing interactive agent rather than starting a second conversation.
-
-## Managed links
-
-Mise owns only these destinations:
-
-```text
-~/.config/mise/config.toml
-~/.config/mise/tasks
-~/.config/nvim
-~/.config/herdr/config.toml
-~/.config/git/config
-~/.config/starship.toml
-~/Library/Application Support/lazygit/config.yml
-~/.vimrc
-~/.tmux.conf
-~/.zprofile
-~/.zshrc
-~/.zsh
-~/.bin
-~/.gemrc
-```
-
-It does not link all of `~/.config` or turn every repository-root file into a home dotfile.
-
 ## Package inventory
 
-The Brewfile is an opt-in inventory of Homebrew, Go, and npm packages. Normal bootstrap does not apply it.
+The bootstrap package list is the minimal development environment. The Brewfile is the complete machine inventory of Homebrew, Go, and npm packages; normal bootstrap does not apply it.
 
 ```sh
 mise run brew-install
 mise run brew-dump
 ```
 
-`brew-install` installs missing entries without upgrading installed packages. `brew-dump` replaces the Brewfile with a successfully generated snapshot of the current machine. Neither task removes packages.
-
-The bootstrap package list is the minimal development environment. The Brewfile is the complete machine inventory.
-
-- `mise` is the bootstrap prerequisite.
-- Homebrew owns every package in the bootstrap.
-- Everything else in the Brewfile is managed only when `brew-install` is run explicitly.
+`brew-install` installs missing Brewfile entries without upgrading installed packages. `brew-dump` replaces the Brewfile with a snapshot of the current machine. Neither task removes packages.
 
 ## References
 
