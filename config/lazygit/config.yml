@@ -1,6 +1,6 @@
 git:
   diffRenderers:
     - name: unified
-      command: hunk pager --mode stack --line-numbers
+      command: delta --paging=never --line-numbers
     - name: side-by-side
-      command: hunk pager --mode split --line-numbers
+      command: delta --paging=never --side-by-side
