@@ -54,17 +54,20 @@ format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 
-[directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = "󰝚 "
-"Pictures" = " "
-"Developer" = "󰲋 "
+substitutions = [
+  { from = '([^/]{32})[^/]+', to = '${1}…', regex = true },
+  { from = "Documents", to = "󰈙 " },
+  { from = "Downloads", to = " " },
+  { from = "Music", to = "󰝚 " },
+  { from = "Pictures", to = " " },
+  { from = "Developer", to = "󰲋 " },
+]
 
 [git_branch]
 symbol = ""
 style = "bg:color_aqua"
 format = '[[ $symbol $branch ](fg:color_fg0 bg:color_aqua)]($style)'
+truncation_length = 32
 
 [git_status]
 style = "bg:color_aqua"
