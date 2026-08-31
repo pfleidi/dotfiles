@@ -8,7 +8,7 @@ min_version = "2026.7.4"
 "brew:gopls" = { version = "latest", os = "macos" }
 "brew:neovim" = { version = "latest", os = "macos" }
 "brew:ripgrep" = { version = "latest", os = "macos" }
-"brew:git-delta" = { version = "latest", os = "macos" }
+"brew:hunk" = { version = "latest", os = "macos" }
 "brew:git-lfs" = { version = "latest", os = "macos" }
 "brew:fd" = { version = "latest", os = "macos" }
 "brew:tree-sitter-cli" = { version = "latest", os = "macos" }

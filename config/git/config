@@ -19,7 +19,7 @@
 
 [core]
 	autocrlf = input
-	pager = delta --dark
+	pager = hunk pager
 
 [init]
 	defaultBranch = main
@@ -29,9 +29,6 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
-
-[delta]
-	side-by-side = true
 
 [diff]
 	algorithm = histogram

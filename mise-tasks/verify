@@ -32,7 +32,7 @@ mise bootstrap repos status --missing
 test -r "$HOME/.oh-my-zsh/oh-my-zsh.sh"
 
 section "Homebrew tools"
-for tool in nvim go gopls rg delta fd tree-sitter starship direnv herdr lazygit git-lfs tmux claude codex; do
+for tool in nvim go gopls rg hunk fd tree-sitter starship direnv herdr lazygit git-lfs tmux claude codex; do
   check_homebrew_tool "$tool"
 done
 
@@ -40,7 +40,7 @@ nvim --version
 go version
 gopls version
 rg --version
-delta --version
+hunk --version
 fd --version
 tree-sitter --version
 starship --version

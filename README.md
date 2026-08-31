@@ -6,7 +6,7 @@ This repository manages a small macOS development environment with mise:
 - Herdr with Claude Code and Codex integrations
 - Neovim with LazyVim, Go support, and CodeDiff
 - Vim as a lightweight plugin-free fallback
-- Go, gopls, ripgrep, delta, fd, and Tree-sitter
+- Go, gopls, ripgrep, Hunk, fd, and Tree-sitter
 - LazyGit and Git LFS
 - Oh My Zsh, Starship, direnv, and tmux
 - explicit Zsh, Git, LazyGit, Herdr, Vim, Neovim, and mise links
