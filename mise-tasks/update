@@ -1,5 +1,5 @@
 #!/bin/sh
-#MISE description="Update Homebrew packages and LazyVim plugins"
+#MISE description="Update managed repositories, packages, and plugins"
 set -eu
 
 script=$(realpath "$0")
@@ -11,6 +11,9 @@ mise bootstrap repos update --yes
 
 printf '\n== native packages ==\n'
 mise bootstrap packages upgrade --yes
+
+printf '\n== agent skills and integrations ==\n'
+mise run bootstrap
 
 printf '\n== LazyVim plugins ==\n'
 nvim --headless "+Lazy! sync" +qa

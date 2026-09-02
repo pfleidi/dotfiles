@@ -23,6 +23,7 @@ min_version = "2026.7.4"
 
 [bootstrap.repos]
 "~/.oh-my-zsh" = { url = "https://github.com/ohmyzsh/ohmyzsh.git", ref = "master" }
+"~/coding/skills" = { url = "git@github.com:pfleidi/skills.git", ref = "main" }
 
 [dotfiles]
 "~/.config/mise/config.toml" = "mise.toml"

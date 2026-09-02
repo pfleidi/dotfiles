@@ -1,6 +1,52 @@
 #!/bin/sh
-#MISE description="Install Herdr agent integrations"
+#MISE description="Install agent skills and integrations"
 set -eu
+
+skills_repo=$HOME/coding/skills
+for required_path in \
+  "$skills_repo/.claude-plugin/marketplace.json" \
+  "$skills_repo/config/global-agents.md" \
+  "$skills_repo/skills/task-implement/SKILL.md"; do
+  if [ ! -r "$required_path" ]; then
+    printf 'Required skills file is missing: %s\n' "$required_path" >&2
+    exit 1
+  fi
+done
+
+install_link() {
+  link_source=$1
+  link_destination=$2
+
+  if [ -L "$link_destination" ]; then
+    if [ "$(readlink "$link_destination")" = "$link_source" ]; then
+      return
+    fi
+    printf 'Refusing to replace symlink: %s\n' "$link_destination" >&2
+    exit 1
+  fi
+  if [ -e "$link_destination" ]; then
+    printf 'Refusing to replace existing path: %s\n' "$link_destination" >&2
+    exit 1
+  fi
+  ln -s "$link_source" "$link_destination"
+}
+
+mkdir -p "$HOME/.agents/skills" "$HOME/.claude"
+if [ -e "$HOME/.codex/AGENTS.md" ] || [ -L "$HOME/.codex/AGENTS.md" ]; then
+  printf 'Remove the custom Codex instructions before bootstrapping: %s\n' "$HOME/.codex/AGENTS.md" >&2
+  exit 1
+fi
+install_link "$skills_repo/config/global-agents.md" "$HOME/.agents/AGENTS.md"
+install_link "$skills_repo" "$HOME/.agents/skills/pfleidi"
+install_link "$skills_repo/config/global-agents.md" "$HOME/.claude/CLAUDE.md"
+
+claude plugin marketplace add "$skills_repo" --scope user
+marketplaces=$(claude plugin marketplace list --json)
+if ! printf '%s\n' "$marketplaces" | rg --fixed-strings "\"path\": \"$skills_repo\"" >/dev/null; then
+  printf 'Claude marketplace pfleidi does not use %s\n' "$skills_repo" >&2
+  exit 1
+fi
+claude plugin install pfleidi@pfleidi --scope user --yes
 
 herdr integration install claude
 herdr integration install codex

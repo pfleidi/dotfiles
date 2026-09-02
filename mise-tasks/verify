@@ -30,6 +30,14 @@ test "$(realpath "$HOME/.config/mise/config.toml")" = "$repo/mise.toml"
 section "managed repositories"
 mise bootstrap repos status --missing
 test -r "$HOME/.oh-my-zsh/oh-my-zsh.sh"
+skills_repo=$HOME/coding/skills
+test -r "$skills_repo/.claude-plugin/marketplace.json"
+test -r "$skills_repo/skills/task-implement/SKILL.md"
+test "$(realpath "$HOME/.agents/AGENTS.md")" = "$skills_repo/config/global-agents.md"
+test "$(realpath "$HOME/.agents/skills/pfleidi")" = "$skills_repo"
+test "$(realpath "$HOME/.claude/CLAUDE.md")" = "$skills_repo/config/global-agents.md"
+test ! -e "$HOME/.codex/AGENTS.md"
+test ! -L "$HOME/.codex/AGENTS.md"
 
 section "Homebrew tools"
 for tool in nvim go gopls rg delta hunk fd tree-sitter starship direnv herdr lazygit git-lfs tmux claude codex; do
@@ -55,6 +63,12 @@ test -r "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.
 test -x "$(dirname "$(realpath "$brew_bin/codex")")/codex-code-mode-host"
 claude --version
 codex --version
+
+section "personal agent skills"
+claude plugin validate "$skills_repo"
+marketplaces=$(claude plugin marketplace list --json)
+printf '%s\n' "$marketplaces" | rg --fixed-strings "\"path\": \"$skills_repo\""
+claude plugin details pfleidi@pfleidi
 
 section "Vim"
 test "$(realpath "$HOME/.vimrc")" = "$repo/config/vim/vimrc"

@@ -4,6 +4,7 @@ This repository manages a small macOS development environment with mise:
 
 - Ghostty
 - Herdr with Claude Code and Codex integrations
+- Private pfleidi agent skills for Codex and Claude Code
 - Neovim with LazyVim, Go support, and CodeDiff
 - Vim as a lightweight plugin-free fallback
 - Go, gopls, ripgrep, delta, Hunk, fd, and Tree-sitter
@@ -40,7 +41,10 @@ fi
 brew install mise
 ```
 
-Mise must exist before this repository can bootstrap the rest of the machine. Clone the repository first and bootstrap from its real checkout path:
+Mise must exist before this repository can bootstrap the rest of the machine.
+GitHub SSH access must also be configured so bootstrap can clone the private
+`pfleidi/skills` repository. Clone this repository and bootstrap from its real
+checkout path:
 
 ```sh
 git clone https://github.com/pfleidi/dotfiles.git "$HOME/dotfiles"
@@ -66,7 +70,12 @@ mise bootstrap status
 mise run verify
 ```
 
-Bootstrap is convergent: packages, repositories, and links already in the declared state are left alone. Mise installs or safely updates a clean `~/.oh-my-zsh` checkout from its official repository and refuses a conflicting or locally modified checkout. Oh My Zsh's own updater is disabled so mise remains its only update path. The final `bootstrap` task re-applies Herdr's Claude and Codex integrations; Herdr's install command is idempotent. It never logs either agent in.
+Bootstrap is convergent: packages, repositories, and links already in the
+declared state are left alone. Mise installs or safely updates clean Oh My Zsh
+and private skills checkouts and refuses conflicting or locally modified
+checkouts. Oh My Zsh's own updater is disabled so mise remains its only update
+path. The final `bootstrap` task refreshes the local Claude plugin and reapplies
+Herdr's Claude and Codex integrations. It never logs either agent in.
 
 Do not use `--force-dotfiles`. If a destination conflicts, stop and move it under:
 
@@ -96,7 +105,12 @@ The public Git config includes this ignored machine-local file:
 
 Use `config/git/config.local.example` as its shape. Identity and signing settings belong in the local file; this repository overrides its author email locally with the personal GitHub address.
 
-`zsh/secrets.zsh` is also ignored and sourced only when present. Its longer-term replacement is intentionally postponed. Claude and Codex login state, tokens, session databases, and generated Herdr integration files stay outside this repository.
+`zsh/secrets.zsh` is also ignored and sourced only when present. Its longer-term
+replacement is intentionally postponed. Claude and Codex login state, tokens,
+session databases, private global agent instructions, skills, and generated
+Herdr integration files stay outside this repository. Bootstrap links the
+private instructions and skills from `~/coding/skills` without copying their
+contents here.
 
 Zsh keeps completion state under `~/.cache/zsh`. Entire completion is regenerated only when the installed CLI is newer than the cached definition. Ruby version management is not initialized globally; use mise in Ruby projects or opt into rbenv from local shell configuration on machines that need it.
 
