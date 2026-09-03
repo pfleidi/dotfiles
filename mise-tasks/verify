@@ -56,7 +56,7 @@ test ! -L "$HOME/.codex/AGENTS.md"
 
 section "managed tools"
 if [ "$platform" = macos ]; then
-  for tool in nvim go gopls rg delta hunk fd tree-sitter starship direnv herdr lazygit git-lfs tmux claude codex orb; do
+  for tool in nvim go gopls rg delta hunk fd tree-sitter starship direnv herdr kanban-md lazygit git-lfs tmux claude codex orb; do
     check_homebrew_tool "$tool"
   done
   test -r "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
@@ -99,6 +99,12 @@ claude plugin validate "$skills_repo"
 marketplaces=$(claude plugin marketplace list --json)
 printf '%s\n' "$marketplaces" | rg --fixed-strings "\"path\": \"$skills_repo\""
 claude plugin details pfleidi@pfleidi
+
+section "daily task board"
+test -x "$repo/bin/today"
+if [ "$platform" = macos ]; then
+  "$repo/bin/today" --version
+fi
 
 section "Vim"
 test "$(realpath "$HOME/.vimrc")" = "$repo/config/vim/vimrc"

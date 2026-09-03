@@ -95,6 +95,25 @@ mise run update
 
 The task updates managed repositories and declared platform packages, synchronizes LazyVim plugins, runs verification, and leaves every change visible to Git. It never commits or pushes.
 
+## Daily task board
+
+The `today` command runs `kanban-md` against the same local board from any
+working directory. Initialize the board once:
+
+```sh
+today init --name Today --statuses planned,in-progress,blocked,done --wip-limit in-progress:3
+today config set claim_timeout 4h
+```
+
+The board lives at `~/.local/share/kanban-md/today`. Open its live terminal
+view or use any regular `kanban-md` command through the wrapper:
+
+```sh
+today tui
+today list
+today board
+```
+
 ## Local and private configuration
 
 The public Git config includes this ignored machine-local file:

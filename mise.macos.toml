@@ -8,6 +8,7 @@
 "brew:neovim" = "latest"
 "brew:ripgrep" = "latest"
 "brew:hunk" = "latest"
+"brew:antopolskiy/tap/kanban-md" = "latest"
 "brew:git-delta" = "latest"
 "brew:git-lfs" = "latest"
 "brew:fd" = "latest"

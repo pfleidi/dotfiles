@@ -1,4 +1,5 @@
 tap "anomalyco/tap", trusted: true
+tap "antopolskiy/tap", trusted: true
 tap "docker/tap", trusted: true
 brew "cloudflared"
 brew "curl"
@@ -19,6 +20,7 @@ brew "herdr"
 brew "htop"
 brew "hunk"
 brew "jq"
+brew "antopolskiy/tap/kanban-md"
 brew "lazygit"
 brew "libyaml"
 brew "mise"

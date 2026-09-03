@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+board_dir=$HOME/.local/share/kanban-md/today
+
+exec kanban-md --dir "$board_dir" "$@"
