@@ -117,6 +117,30 @@ Starship uses the managed `~/.config/starship.toml` prompt configuration. Direnv
 
 After a fresh bootstrap, run `claude` and `codex` interactively if either CLI still needs authentication.
 
+## Agentbox repository manifest
+
+Generate the private repository manifest from an existing directory of Git
+working trees:
+
+```sh
+agentbox sync-repos DIRECTORY
+```
+
+The command searches recursively, stops below each working tree, and writes
+only normalized GitHub SSH remotes to `~/.config/agentbox/repos`. It rejects
+unsupported or credential-bearing remotes and clone-directory collisions. A
+failed scan leaves the previous manifest unchanged; the source directory is
+not stored.
+
+## Agentbox machine template
+
+The versioned `config/agentbox/workbox.json` template selects the distribution,
+architecture, CPU count, memory in MiB, and disk size in GiB. `agentbox create`
+validates the file before touching OrbStack, uses it for new machines, and
+reapplies its resource limits to an existing isolated machine without deleting
+guest data. A distribution without a version, such as `ubuntu`, follows
+OrbStack's current default release.
+
 ## Rollback
 
 Changes are kept in focused Git commits. Revert the unwanted commit, inspect the new plan, and reapply the declared state:

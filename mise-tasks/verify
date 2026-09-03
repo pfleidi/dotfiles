@@ -42,6 +42,9 @@ test "$(realpath "$HOME/.config/mise/config.toml")" = "$repo/mise.toml"
 test "$(realpath "$HOME/.config/mise/config.$platform.toml")" = "$repo/mise.$platform.toml"
 test "$(cat "$HOME/.config/mise/miserc.toml")" = "auto_env = true"
 
+section "Agentbox"
+tests/agentbox
+
 section "managed repositories"
 mise bootstrap repos status --missing
 test -r "$HOME/.oh-my-zsh/oh-my-zsh.sh"

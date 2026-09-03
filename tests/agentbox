@@ -1,0 +1,100 @@
+#!/bin/sh
+
+set -eu
+
+script=$(realpath "$0")
+repo=$(dirname "$(dirname "$script")")
+agentbox=$repo/bin/agentbox
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/agentbox-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT HUP INT TERM
+test_home=$test_root/home
+config_home=$test_home/.config
+manifest=$config_home/agentbox/repos
+machine_template=$repo/config/agentbox/workbox.json
+mkdir -p "$test_home"
+
+fail() {
+  printf '%s\n' "$1" >&2
+  exit 1
+}
+
+create_repository() {
+  directory=$1
+  remote_name=$2
+  remote_url=$3
+  mkdir -p "$directory"
+  git init -q "$directory"
+  git -C "$directory" remote add "$remote_name" "$remote_url"
+}
+
+run_sync() {
+  HOME=$test_home XDG_CONFIG_HOME=$config_home "$agentbox" sync-repos "$1"
+}
+
+assert_manifest_unchanged_after_failure() {
+  failure_source=$1
+  expected_error=$2
+  cp "$manifest" "$test_root/manifest.before"
+  if run_sync "$failure_source" >"$test_root/stdout" 2>"$test_root/stderr"; then
+    fail 'Expected repository synchronization to fail.'
+  fi
+  grep -Fqx "$expected_error" "$test_root/stderr" || fail 'Repository synchronization failed for the wrong reason.'
+  cmp -s "$test_root/manifest.before" "$manifest" || fail 'A failed synchronization replaced the previous manifest.'
+}
+
+source_tree=$test_root/source
+mkdir -p "$source_tree/recursive/deep" "$source_tree/plain"
+create_repository "$source_tree/recursive/deep/https" origin https://github.com/example/alpha.git
+create_repository "$source_tree/scp" origin git@github.com:example/bravo.git
+create_repository "$source_tree/ssh" origin ssh://git@github.com/example/charlie.git
+create_repository "$source_tree/fallback" origin https://example.invalid/example/delta.git
+git -C "$source_tree/fallback" remote add github git@github.com:example/delta.git
+create_repository "$source_tree/parent" origin git@github.com:example/parent.git
+create_repository "$source_tree/parent/nested" origin git@github.com:example/must-not-appear.git
+
+run_sync "$source_tree"
+
+cat >"$test_root/expected" <<'EOF'
+git@github.com:example/alpha.git
+git@github.com:example/bravo.git
+git@github.com:example/charlie.git
+git@github.com:example/delta.git
+git@github.com:example/parent.git
+EOF
+cmp -s "$test_root/expected" "$manifest" || fail 'Repository discovery or normalization produced the wrong manifest.'
+if grep -F "$source_tree" "$manifest" >/dev/null; then
+  fail 'The manifest retained the source directory.'
+fi
+
+case $(uname -s) in
+  Darwin)
+    manifest_mode=$(stat -f %Lp "$manifest")
+    ;;
+  *)
+    manifest_mode=$(stat -c %a "$manifest")
+    ;;
+esac
+[ "$manifest_mode" = 600 ] || fail 'The repository manifest mode is not 0600.'
+
+template_home=$test_root/template-home
+mkdir -p "$template_home"
+if HOME=$template_home XDG_CONFIG_HOME=$template_home/.config "$agentbox" create >"$test_root/stdout" 2>"$test_root/stderr"; then
+  fail 'Expected create without a repository manifest to fail.'
+fi
+grep -Fqx 'Run agentbox sync-repos DIRECTORY before creating the machine.' "$test_root/stderr" || fail 'The checked-in machine template did not pass validation.'
+jq -e '.distribution == "ubuntu" and .architecture == "arm64" and .cpus == 8 and .memory_mib == 8192 and .disk_gib == 100' "$machine_template" >/dev/null || fail 'The checked-in machine template has unexpected values.'
+
+collision=$test_root/collision
+create_repository "$collision/one" origin git@github.com:first/shared.git
+create_repository "$collision/two" origin git@github.com:second/shared.git
+assert_manifest_unchanged_after_failure "$collision" 'Different repositories would clone to the same directory name.'
+
+credentials=$test_root/credentials
+create_repository "$credentials/repository" origin https://token@github.com/example/private.git
+assert_manifest_unchanged_after_failure "$credentials" 'A repository has an HTTP remote with embedded credentials.'
+
+unsupported=$test_root/unsupported
+create_repository "$unsupported/repository" origin https://example.invalid/example/repository.git
+assert_manifest_unchanged_after_failure "$unsupported" 'A repository has no supported GitHub remote.'
+
+printf 'agentbox repository synchronization tests passed\n'
