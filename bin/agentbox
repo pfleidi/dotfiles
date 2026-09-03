@@ -319,12 +319,20 @@ install_ssh_alias() {
   old_alias_content='Host workbox
     HostName orb
     User workbox'
+  previous_alias_content='Host workbox
+    HostName 127.0.0.1
+    Port 32222
+    User workbox
+    IdentityFile ~/.orbstack/ssh/id_ed25519
+    IdentitiesOnly yes
+    UserKnownHostsFile ~/.orbstack/ssh/known_hosts'
   alias_content='Host workbox
     HostName 127.0.0.1
     Port 32222
     User workbox
     IdentityFile ~/.orbstack/ssh/id_ed25519
     IdentitiesOnly yes
+    ForwardAgent no
     UserKnownHostsFile ~/.orbstack/ssh/known_hosts'
 
   mkdir -p "$ssh_dir/config.d"
@@ -341,7 +349,7 @@ install_ssh_alias() {
     current_alias=$(cat "$ssh_alias")
     if [ "$current_alias" = "$alias_content" ]; then
       write_alias=false
-    elif [ "$current_alias" != "$old_alias_content" ]; then
+    elif [ "$current_alias" != "$old_alias_content" ] && [ "$current_alias" != "$previous_alias_content" ]; then
       fail 'Refusing to replace a conflicting Agentbox SSH alias file.'
     fi
   fi
@@ -486,7 +494,11 @@ case $command in
     ;;
   shell)
     require_orb
-    orbctl run --machine "$machine" "$@"
+    if [ "$#" -eq 0 ]; then
+      orbctl run --machine "$machine"
+    else
+      orbctl run --machine "$machine" /usr/bin/env -- "$@"
+    fi
     ;;
   start)
     [ "$#" -eq 0 ] || usage

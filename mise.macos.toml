@@ -5,6 +5,8 @@
 "brew-cask:orbstack" = "latest"
 "brew:go" = "latest"
 "brew:gopls" = "latest"
+"brew:gh" = "latest"
+"brew:jq" = "latest"
 "brew:neovim" = "latest"
 "brew:ripgrep" = "latest"
 "brew:hunk" = "latest"

@@ -84,6 +84,105 @@ fi
 grep -Fqx 'Run agentbox sync-repos DIRECTORY before creating the machine.' "$test_root/stderr" || fail 'The checked-in machine template did not pass validation.'
 jq -e '.distribution == "ubuntu" and .architecture == "arm64" and .cpus == 8 and .memory_mib == 8192 and .disk_gib == 100' "$machine_template" >/dev/null || fail 'The checked-in machine template has unexpected values.'
 
+fake_bin=$test_root/fake-bin
+mkdir -p "$fake_bin"
+cat >"$fake_bin/uname" <<'EOF'
+#!/bin/sh
+printf 'Darwin\n'
+EOF
+cat >"$fake_bin/orb" <<'EOF'
+#!/bin/sh
+case $* in
+  'list -q')
+    printf 'workbox\n'
+    ;;
+  'info workbox -f json')
+    printf '%s\n' '{"record":{"image":{"distro":"ubuntu","version":"current","arch":"arm64"}}}'
+    ;;
+  'config get machine.workbox.isolated'|'config get machine.workbox.isolate_network')
+    printf 'true\n'
+    ;;
+  'config get machine.workbox.forward_ssh_agent'|'config get machines.expose_ports_to_lan')
+    printf 'false\n'
+    ;;
+  'config get machine.workbox.mounts'|'config set '*)
+    ;;
+  *)
+    exit 1
+    ;;
+esac
+EOF
+cat >"$fake_bin/gh" <<'EOF'
+#!/bin/sh
+case $* in
+  'api user --jq .login')
+    printf 'example\n'
+    ;;
+  'api user/keys --paginate --jq .[].key')
+    printf 'ssh-ed25519 AAAATEST\n'
+    ;;
+  *)
+    exit 1
+    ;;
+esac
+EOF
+cat >"$fake_bin/ssh-keygen" <<'EOF'
+#!/bin/sh
+printf 'ssh-ed25519 AAAATEST\n'
+EOF
+cat >"$fake_bin/orbctl" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$@" >"$AGENTBOX_TEST_LOG"
+EOF
+chmod +x "$fake_bin/uname" "$fake_bin/orb" "$fake_bin/gh" "$fake_bin/ssh-keygen" "$fake_bin/orbctl"
+
+key_path=$config_home/agentbox/keys/workbox/github_ed25519
+mkdir -p "$(dirname "$key_path")"
+printf 'synthetic private key\n' >"$key_path"
+printf 'synthetic title\n' >"$key_path.title"
+PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home "$agentbox" create
+
+combined_ssh_config=$test_root/combined-ssh-config
+cat "$test_home/.ssh/config.d/agentbox" >"$combined_ssh_config"
+printf '\nHost *\n    ForwardAgent yes\n' >>"$combined_ssh_config"
+effective_forward_agent=$(ssh -F "$combined_ssh_config" -G workbox 2>/dev/null | awk '$1 == "forwardagent" { print $2; exit }')
+[ "$effective_forward_agent" = no ] || fail 'The workbox SSH alias permits inherited agent forwarding.'
+
+cat >"$test_home/.ssh/config.d/agentbox" <<'EOF'
+Host workbox
+    HostName 127.0.0.1
+    Port 32222
+    User workbox
+    IdentityFile ~/.orbstack/ssh/id_ed25519
+    IdentitiesOnly yes
+    UserKnownHostsFile ~/.orbstack/ssh/known_hosts
+EOF
+PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home "$agentbox" create
+grep -Fqx '    ForwardAgent no' "$test_home/.ssh/config.d/agentbox" || fail 'The previous Agentbox SSH alias was not migrated.'
+
+shell_log=$test_root/shell-arguments
+PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home AGENTBOX_TEST_LOG=$shell_log "$agentbox" shell --user root id -u
+cat >"$test_root/expected-shell-arguments" <<'EOF'
+run
+--machine
+workbox
+/usr/bin/env
+--
+--user
+root
+id
+-u
+EOF
+cmp -s "$test_root/expected-shell-arguments" "$shell_log" || fail 'Shell command arguments crossed the OrbStack option boundary.'
+
+PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home AGENTBOX_TEST_LOG=$shell_log "$agentbox" shell
+cat >"$test_root/expected-shell-arguments" <<'EOF'
+run
+--machine
+workbox
+EOF
+cmp -s "$test_root/expected-shell-arguments" "$shell_log" || fail 'Shell without a command no longer opens an interactive session.'
+
 collision=$test_root/collision
 create_repository "$collision/one" origin git@github.com:first/shared.git
 create_repository "$collision/two" origin git@github.com:second/shared.git

@@ -1,16 +1,15 @@
 # Dotfiles
 
 This repository manages a macOS-first development environment with mise. Shared
-configuration also supports Linux machines without changing the macOS package
-and configuration defaults.
+configuration also supports Ubuntu and Debian-based Linux machines without
+changing the macOS package and configuration defaults.
 
 The checked-in LazyVim lockfile pins editor plugin versions.
 
 `mise.toml` contains shared state. Mise automatically adds `mise.macos.toml` or
 `mise.linux.toml` through the managed global `miserc.toml`. macOS remains the
-primary setup and keeps Homebrew ownership of its packages. Linux uses its
-native package manager for system dependencies and mise for versioned command
-line tools.
+primary setup and keeps Homebrew ownership of its packages. The Linux layer uses
+apt for system dependencies and mise for versioned command-line tools.
 
 ## Fresh macOS setup
 
