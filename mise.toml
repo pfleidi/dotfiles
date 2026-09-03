@@ -1,36 +1,17 @@
 min_version = "2026.7.4"
 
-[bootstrap.packages]
-"brew-cask:ghostty" = { version = "latest", os = "macos" }
-"brew-cask:claude-code@latest" = { version = "latest", os = "macos" }
-"brew-cask:codex" = { version = "latest", os = "macos" }
-"brew:go" = { version = "latest", os = "macos" }
-"brew:gopls" = { version = "latest", os = "macos" }
-"brew:neovim" = { version = "latest", os = "macos" }
-"brew:ripgrep" = { version = "latest", os = "macos" }
-"brew:hunk" = { version = "latest", os = "macos" }
-"brew:git-delta" = { version = "latest", os = "macos" }
-"brew:git-lfs" = { version = "latest", os = "macos" }
-"brew:fd" = { version = "latest", os = "macos" }
-"brew:tree-sitter-cli" = { version = "latest", os = "macos" }
-"brew:starship" = { version = "latest", os = "macos" }
-"brew:direnv" = { version = "latest", os = "macos" }
-"brew:herdr" = { version = "latest", os = "macos" }
-"brew:lazygit" = { version = "latest", os = "macos" }
-"brew:zsh-syntax-highlighting" = { version = "latest", os = "macos" }
-"brew:tmux" = { version = "latest", os = "macos" }
-"brew:vim" = { version = "latest", os = "macos" }
-
 [bootstrap.repos]
 "~/.oh-my-zsh" = { url = "https://github.com/ohmyzsh/ohmyzsh.git", ref = "master" }
 "~/coding/skills" = { url = "git@github.com:pfleidi/skills.git", ref = "main" }
 
 [dotfiles]
 "~/.config/mise/config.toml" = "mise.toml"
+"~/.config/mise/config.linux.toml" = "mise.linux.toml"
+"~/.config/mise/config.macos.toml" = "mise.macos.toml"
+"~/.config/mise/miserc.toml" = { content = "auto_env = true\n" }
 "~/.config/mise/tasks" = "mise-tasks"
 "~/.config/herdr/config.toml" = "config/herdr/config.toml"
 "~/.config/git/config" = "config/git/config"
-"~/Library/Application Support/lazygit/config.yml" = "config/lazygit/config.yml"
 "~/.config/nvim" = "config/nvim"
 "~/.config/starship.toml" = "config/starship.toml"
 "~/.vimrc" = "config/vim/vimrc"

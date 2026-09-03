@@ -2,7 +2,7 @@ typeset -U path PATH fpath FPATH
 path=("$HOME/.local/bin" $path)
 path+=("$HOME/go/bin" "$HOME/.bin")
 
-[[ -d "$HOMEBREW_PREFIX/share/zsh/site-functions" ]] && fpath=("$HOMEBREW_PREFIX/share/zsh/site-functions" $fpath)
+[[ -n ${HOMEBREW_PREFIX:-} && -d "$HOMEBREW_PREFIX/share/zsh/site-functions" ]] && fpath=("$HOMEBREW_PREFIX/share/zsh/site-functions" $fpath)
 
 if command -v mise >/dev/null 2>&1; then
   eval "$(mise activate zsh)"
@@ -23,15 +23,23 @@ CASE_SENSITIVE="true"
 
 zstyle ':omz:update' mode disabled
 
-plugins=(git brew ssh-agent kubectl tmux direnv)
-
-zstyle ':omz:plugins:ssh-agent' lazy yes
+if [[ $OSTYPE == darwin* ]]; then
+  plugins=(git brew ssh-agent kubectl tmux direnv)
+  zstyle ':omz:plugins:ssh-agent' lazy yes
+else
+  plugins=(git kubectl tmux direnv)
+fi
 
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor)
 
 # Locale settings (utf-8)
-export LC_CTYPE=en_US.UTF-8
-export LANG=en_US.UTF-8
+if [[ $OSTYPE == darwin* ]]; then
+  export LC_CTYPE=en_US.UTF-8
+  export LANG=en_US.UTF-8
+else
+  export LC_CTYPE=C.UTF-8
+  export LANG=C.UTF-8
+fi
 
 # load ~/.zshrc.local
 [[ -s $HOME/.zshrc.local ]] && source "$HOME/.zshrc.local"
@@ -71,6 +79,10 @@ autoload -U url-quote-magic
 zle -N self-insert url-quote-magic
 
 command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
-[[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+if [[ -n ${HOMEBREW_PREFIX:-} && -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+  source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+elif [[ -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+  source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
 
 # EOF

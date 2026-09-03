@@ -1,6 +1,6 @@
 # Dotfiles
 
-This repository manages a small macOS development environment with mise:
+This repository manages a small macOS and Linux development environment with mise:
 
 - Ghostty
 - Herdr with Claude Code and Codex integrations
@@ -13,6 +13,12 @@ This repository manages a small macOS development environment with mise:
 - explicit Zsh, Git, LazyGit, Herdr, Vim, Neovim, and mise links
 
 The checked-in LazyVim lockfile pins editor plugin versions.
+
+`mise.toml` contains shared state. Mise automatically adds `mise.macos.toml` or
+`mise.linux.toml` through the managed global `miserc.toml`. macOS remains the
+primary setup and keeps Homebrew ownership of its packages. Linux uses its
+native package manager for system dependencies and mise for versioned command
+line tools.
 
 ## Fresh macOS setup
 
@@ -50,13 +56,15 @@ checkout path:
 git clone https://github.com/pfleidi/dotfiles.git "$HOME/dotfiles"
 cd "$HOME/dotfiles"
 
-mise bootstrap --dry-run
-mise bootstrap --yes
+MISE_AUTO_ENV=true mise bootstrap --dry-run
+MISE_AUTO_ENV=true mise bootstrap --yes
 mise bootstrap status
 mise run verify
 ```
 
 The `$HOME/dotfiles` destination is only an example. Dotfile sources are relative to `mise.toml`, so the checkout can live anywhere.
+The first bootstrap installs OrbStack when it is missing. Open the OrbStack app
+once afterward to finish its setup.
 
 ## Existing checkout
 
@@ -64,8 +72,8 @@ Review the plan before applying it:
 
 ```sh
 cd <dotfiles-checkout>
-mise bootstrap --dry-run
-mise bootstrap --yes
+MISE_AUTO_ENV=true mise bootstrap --dry-run
+MISE_AUTO_ENV=true mise bootstrap --yes
 mise bootstrap status
 mise run verify
 ```
@@ -93,7 +101,7 @@ Bootstrap installs missing packages; it does not upgrade everything. Updates are
 mise run update
 ```
 
-The task updates managed repositories and declared Homebrew packages, synchronizes LazyVim plugins, runs verification, and leaves every change visible to Git. It never commits or pushes.
+The task updates managed repositories and declared platform packages, synchronizes LazyVim plugins, runs verification, and leaves every change visible to Git. It never commits or pushes.
 
 ## Local and private configuration
 

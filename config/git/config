@@ -1,4 +1,5 @@
 [include]
+	path = ~/.config/git/config.platform
 	path = ~/.config/git/config.local
 
 [alias]
@@ -13,9 +14,6 @@
 [rerere]
 	enabled = true
 	autoupdate = true
-
-[credential]
-	helper = osxkeychain
 
 [core]
 	autocrlf = input

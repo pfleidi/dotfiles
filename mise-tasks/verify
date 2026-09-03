@@ -18,14 +18,29 @@ check_homebrew_tool() {
 script=$(realpath "$0")
 repo=$(dirname "$(dirname "$script")")
 cd "$repo"
-brew_bin=$(brew --prefix)/bin
-PATH=$brew_bin:$PATH
-export PATH
+
+case $(uname -s) in
+  Darwin)
+    platform=macos
+    brew_bin=$(brew --prefix)/bin
+    PATH=$brew_bin:$PATH
+    export PATH
+    ;;
+  Linux)
+    platform=linux
+    ;;
+  *)
+    printf 'Unsupported platform: %s\n' "$(uname -s)" >&2
+    exit 1
+    ;;
+esac
 
 section "mise"
 mise --version
 mise tasks validate --errors-only
 test "$(realpath "$HOME/.config/mise/config.toml")" = "$repo/mise.toml"
+test "$(realpath "$HOME/.config/mise/config.$platform.toml")" = "$repo/mise.$platform.toml"
+test "$(cat "$HOME/.config/mise/miserc.toml")" = "auto_env = true"
 
 section "managed repositories"
 mise bootstrap repos status --missing
@@ -39,10 +54,19 @@ test "$(realpath "$HOME/.claude/CLAUDE.md")" = "$skills_repo/config/global-agent
 test ! -e "$HOME/.codex/AGENTS.md"
 test ! -L "$HOME/.codex/AGENTS.md"
 
-section "Homebrew tools"
-for tool in nvim go gopls rg delta hunk fd tree-sitter starship direnv herdr lazygit git-lfs tmux claude codex; do
-  check_homebrew_tool "$tool"
-done
+section "managed tools"
+if [ "$platform" = macos ]; then
+  for tool in nvim go gopls rg delta hunk fd tree-sitter starship direnv herdr lazygit git-lfs tmux claude codex orb; do
+    check_homebrew_tool "$tool"
+  done
+  test -r "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+  test -x "$(dirname "$(realpath "$brew_bin/codex")")/codex-code-mode-host"
+else
+  for tool in nvim go gopls node pnpm rg delta hunk fd tree-sitter starship direnv herdr lazygit git-lfs tmux claude codex entire gh jq yq shellcheck; do
+    command -v "$tool"
+  done
+  test -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
 
 nvim --version
 go version
@@ -59,10 +83,17 @@ herdr --version
 lazygit --version
 git lfs version
 tmux -V
-test -r "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-test -x "$(dirname "$(realpath "$brew_bin/codex")")/codex-code-mode-host"
 claude --version
 codex --version
+if [ "$platform" = linux ]; then
+  node --version
+  pnpm --version
+  entire version
+  gh --version
+  jq --version
+  yq --version
+  shellcheck --version
+fi
 
 section "personal agent skills"
 claude plugin validate "$skills_repo"
@@ -72,6 +103,12 @@ claude plugin details pfleidi@pfleidi
 
 section "Vim"
 test "$(realpath "$HOME/.vimrc")" = "$repo/config/vim/vimrc"
+if [ "$platform" = macos ]; then
+  test "$(realpath "$HOME/Library/Application Support/lazygit/config.yml")" = "$repo/config/lazygit/config.yml"
+  test "$(realpath "$HOME/.config/git/config.platform")" = "$repo/config/git/macos"
+else
+  test "$(realpath "$HOME/.config/lazygit/config.yml")" = "$repo/config/lazygit/config.yml"
+fi
 vim -Nu "$repo/config/vim/vimrc" -n -es \
   "+call assert_equal('retrobox', g:colors_name)" \
   "+call assert_equal('rg --vimgrep --smart-case', &grepprg)" \

@@ -1,0 +1,43 @@
+[bootstrap.packages]
+"apt:build-essential" = "latest"
+"apt:ca-certificates" = "latest"
+"apt:curl" = "latest"
+"apt:git" = "latest"
+"apt:htop" = "latest"
+"apt:openssh-client" = "latest"
+"apt:pkg-config" = "latest"
+"apt:tmux" = "latest"
+"apt:tree" = "latest"
+"apt:unzip" = "latest"
+"apt:vim" = "latest"
+"apt:xz-utils" = "latest"
+"apt:zip" = "latest"
+"apt:zsh" = "latest"
+"apt:zsh-syntax-highlighting" = "latest"
+
+[tools]
+go = "latest"
+"go:golang.org/x/tools/gopls" = { version = "latest", depends = "go" }
+node = "lts"
+"aqua:BurntSushi/ripgrep" = "latest"
+"aqua:anthropics/claude-code" = "latest"
+"aqua:cli/cli" = "latest"
+"aqua:dandavison/delta" = "latest"
+"aqua:direnv/direnv" = "latest"
+"aqua:entireio/cli" = { version = "latest", prerelease = true }
+"aqua:git-lfs/git-lfs" = "latest"
+"aqua:herdrdev/herdr" = "latest"
+"aqua:jesseduffield/lazygit" = "latest"
+"aqua:jqlang/jq" = "latest"
+"aqua:mikefarah/yq" = "latest"
+"aqua:modem-dev/hunk" = "latest"
+"aqua:neovim/neovim" = "latest"
+"aqua:openai/codex" = "latest"
+"aqua:pnpm/pnpm" = "latest"
+"aqua:sharkdp/fd" = "latest"
+"aqua:starship/starship" = "latest"
+"aqua:tree-sitter/tree-sitter" = "latest"
+"aqua:koalaman/shellcheck" = "latest"
+
+[dotfiles]
+"~/.config/lazygit/config.yml" = "config/lazygit/config.yml"
