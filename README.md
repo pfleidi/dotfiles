@@ -101,12 +101,12 @@ The `today` command runs `kanban-md` against the same local board from any
 working directory. Initialize the board once:
 
 ```sh
-today init --name Today --statuses planned,in-progress,blocked,done --wip-limit in-progress:3
-today config set claim_timeout 4h
+today init --name Today --statuses planned,in-progress,blocked,done --wip-limit in-progress:1
 ```
 
 The board lives at `~/.local/share/kanban-md/today`. Open its live terminal
-view or use any regular `kanban-md` command through the wrapper:
+view or use any regular `kanban-md` command through the wrapper. This is a
+personal action list, not work intake for coding agents:
 
 ```sh
 today tui
