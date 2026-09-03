@@ -1,16 +1,8 @@
 # Dotfiles
 
-This repository manages a small macOS and Linux development environment with mise:
-
-- Ghostty
-- Herdr with Claude Code and Codex integrations
-- Private pfleidi agent skills for Codex and Claude Code
-- Neovim with LazyVim, Go support, and CodeDiff
-- Vim as a lightweight plugin-free fallback
-- Go, gopls, ripgrep, delta, Hunk, fd, and Tree-sitter
-- LazyGit and Git LFS
-- Oh My Zsh, Starship, direnv, and tmux
-- explicit Zsh, Git, LazyGit, Herdr, Vim, Neovim, and mise links
+This repository manages a macOS-first development environment with mise. Shared
+configuration also supports Linux machines without changing the macOS package
+and configuration defaults.
 
 The checked-in LazyVim lockfile pins editor plugin versions.
 
@@ -113,14 +105,13 @@ The public Git config includes this ignored machine-local file:
 
 Use `config/git/config.local.example` as its shape. Identity and signing settings belong in the local file; this repository overrides its author email locally with the personal GitHub address.
 
-`zsh/secrets.zsh` is also ignored and sourced only when present. Its longer-term
-replacement is intentionally postponed. Claude and Codex login state, tokens,
-session databases, private global agent instructions, skills, and generated
-Herdr integration files stay outside this repository. Bootstrap links the
-private instructions and skills from `~/coding/skills` without copying their
-contents here.
+`zsh/secrets.zsh` is ignored and sourced only when present. Claude and Codex
+login state, tokens, session databases, private global agent instructions,
+skills, and generated Herdr integration files stay outside this repository.
+Bootstrap links private instructions and skills without copying their contents
+here.
 
-Zsh keeps completion state under `~/.cache/zsh`. Entire completion is regenerated only when the installed CLI is newer than the cached definition. Ruby version management is not initialized globally; use mise in Ruby projects or opt into rbenv from local shell configuration on machines that need it.
+Zsh keeps completion state under `~/.cache/zsh`. Ruby version management is not initialized globally; use mise in Ruby projects or opt into rbenv from local shell configuration on machines that need it.
 
 Starship uses the managed `~/.config/starship.toml` prompt configuration. Direnv has no global configuration; its official Oh My Zsh plugin provides the shell hook.
 

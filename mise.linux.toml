@@ -24,7 +24,6 @@ node = "lts"
 "aqua:cli/cli" = "latest"
 "aqua:dandavison/delta" = "latest"
 "aqua:direnv/direnv" = "latest"
-"aqua:entireio/cli" = { version = "latest", prerelease = true }
 "aqua:git-lfs/git-lfs" = "latest"
 "aqua:herdrdev/herdr" = "latest"
 "aqua:jesseduffield/lazygit" = "latest"
