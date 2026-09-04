@@ -53,6 +53,26 @@ require_orb() {
   require_command orb
 }
 
+require_replaceable_file() {
+  if [ -L "$1" ]; then
+    fail "Refusing to replace a symlinked $2."
+  fi
+  if [ -e "$1" ] && [ ! -f "$1" ]; then
+    fail "Refusing to replace a non-file $2."
+  fi
+}
+
+install_file() {
+  mode=$1
+  destination=$2
+  file_tmp=$(mktemp "$(dirname "$destination")/.agentbox.XXXXXX")
+  if cat >"$file_tmp" && chmod "$mode" "$file_tmp" && mv -f "$file_tmp" "$destination"; then
+    return
+  fi
+  rm -f "$file_tmp"
+  fail "Could not replace $destination."
+}
+
 load_machine_template() {
   require_command jq
   [ -f "$machine_template" ] && [ -r "$machine_template" ] || fail 'The workbox machine template is missing from the dotfiles repository.'
@@ -60,7 +80,7 @@ load_machine_template() {
   if ! jq -e '
     type == "object" and
     (keys | sort) == ["architecture", "cpus", "disk_gib", "distribution", "memory_mib"] and
-    (.distribution | type == "string" and length > 0) and
+    (.distribution | type == "string" and test("^[A-Za-z0-9_.:-]+$")) and
     (.architecture == "arm64" or .architecture == "amd64") and
     (.cpus | type == "number" and . == floor and . >= 1) and
     (.memory_mib | type == "number" and . == floor and . >= 512) and
@@ -74,12 +94,6 @@ load_machine_template() {
   cpu_limit=$(jq -r .cpus "$machine_template")
   memory_limit_mib=$(jq -r .memory_mib "$machine_template")
   disk_limit_gib=$(jq -r .disk_gib "$machine_template")
-
-  case $distribution in
-    *[!A-Za-z0-9_.:-]*)
-      fail 'The workbox template distribution is invalid.'
-      ;;
-  esac
   disk_limit_bytes=$((disk_limit_gib * 1024 * 1024 * 1024))
 }
 
@@ -100,33 +114,18 @@ normalize_github_remote() {
       return 1
       ;;
   esac
-
-  case $path in
-    *.git)
-      path=${path%.git}
-      ;;
-  esac
+  path=${path%.git}
 
   owner=${path%%/*}
   repository=${path#*/}
-  if [ "$repository" = "$path" ] || [ -z "$owner" ] || [ -z "$repository" ]; then
-    return 1
-  fi
-  case $repository in
-    */*)
-      return 1
-      ;;
-  esac
-  case $owner in
-    .|..|*[!A-Za-z0-9_.-]*)
-      return 1
-      ;;
-  esac
-  case $repository in
-    .|..|*[!A-Za-z0-9_.-]*)
-      return 1
-      ;;
-  esac
+  [ "$repository" != "$path" ] || return 1
+  for segment in "$owner" "$repository"; do
+    case $segment in
+      ''|.|..|*[!A-Za-z0-9_.-]*)
+        return 1
+        ;;
+    esac
+  done
 
   printf 'git@github.com:%s/%s.git\n' "$owner" "$repository"
 }
@@ -146,42 +145,26 @@ repository_remote() {
     done
   done
 
-  if git -C "$repository_dir" remote get-url origin >/dev/null 2>&1; then
-    remote_url=$(git -C "$repository_dir" remote get-url origin 2>/dev/null) || return 1
+  for remote_name in origin $(printf '%s\n' "$remotes" | grep -Fvx origin | LC_ALL=C sort); do
+    remote_url=$(git -C "$repository_dir" remote get-url "$remote_name" 2>/dev/null) || continue
     if normalized=$(normalize_github_remote "$remote_url"); then
-      printf '%s\n' "$normalized"
-      return
-    fi
-  fi
-
-  old_ifs=$IFS
-  IFS='
-'
-  for remote_name in $(printf '%s\n' "$remotes" | LC_ALL=C sort); do
-    [ "$remote_name" = origin ] && continue
-    remote_url=$(git -C "$repository_dir" remote get-url "$remote_name" 2>/dev/null) || {
-      IFS=$old_ifs
-      return 1
-    }
-    if normalized=$(normalize_github_remote "$remote_url"); then
-      IFS=$old_ifs
       printf '%s\n' "$normalized"
       return
     fi
   done
-  IFS=$old_ifs
 
   return 1
+}
+
+check_clone_collisions() {
+  awk -F/ '$NF in seen && seen[$NF] != $0 { exit 1 } { seen[$NF] = $0 }' "$1"
 }
 
 sync_repositories() {
   [ "$#" -eq 1 ] || usage
   source_directory=$1
   [ -d "$source_directory" ] || fail 'Repository source must be a directory.'
-
   require_command git
-  require_command find
-  require_command sort
 
   mkdir -p "$config_root"
   chmod 700 "$config_root"
@@ -189,84 +172,48 @@ sync_repositories() {
   trap 'rm -rf "$work_dir"' EXIT HUP INT TERM
   repositories=$work_dir/repositories
   discovered=$work_dir/discovered
-  seen=$work_dir/seen
-  : >"$discovered"
-  : >"$seen"
 
   if ! find "$source_directory" -type d \
     -exec sh -c 'test -e "$1/.git"' sh {} \; \
     -print -prune >"$repositories"; then
     fail 'Repository discovery failed.'
   fi
-  if [ ! -s "$repositories" ]; then
-    fail 'No Git working trees were found.'
-  fi
+  [ -s "$repositories" ] || fail 'No Git working trees were found.'
 
   while IFS= read -r repository_dir; do
-    if normalized=$(repository_remote "$repository_dir"); then
-      :
-    else
-      status=$?
-      if [ "$status" -eq 2 ]; then
-        fail 'A repository has an HTTP remote with embedded credentials.'
-      fi
-      fail 'A repository has no supported GitHub remote.'
-    fi
-
-    clone_name=${normalized##*/}
-    clone_name=${clone_name%.git}
-    existing=$(awk -F '\t' -v name="$clone_name" '$1 == name { print $2; exit }' "$seen")
-    if [ -n "$existing" ] && [ "$existing" != "$normalized" ]; then
-      fail 'Different repositories would clone to the same directory name.'
-    fi
-    if [ -z "$existing" ]; then
-      printf '%s\t%s\n' "$clone_name" "$normalized" >>"$seen"
-    fi
+    status=0
+    normalized=$(repository_remote "$repository_dir") || status=$?
+    case $status in
+      0) ;;
+      2) fail 'A repository has an HTTP remote with embedded credentials.' ;;
+      *) fail 'A repository has no supported GitHub remote.' ;;
+    esac
     printf '%s\n' "$normalized" >>"$discovered"
   done <"$repositories"
 
-  manifest_tmp=$(mktemp "$config_root/.repos.XXXXXX")
-  if ! LC_ALL=C sort -u "$discovered" >"$manifest_tmp"; then
-    rm -f "$manifest_tmp"
-    fail 'Could not sort the repository manifest.'
-  fi
-  chmod 600 "$manifest_tmp"
-  if ! mv -f "$manifest_tmp" "$manifest"; then
-    rm -f "$manifest_tmp"
-    fail 'Could not replace the repository manifest.'
-  fi
-  trap - EXIT HUP INT TERM
-  rm -rf "$work_dir"
+  LC_ALL=C sort -u -o "$discovered" "$discovered"
+  check_clone_collisions "$discovered" || fail 'Different repositories would clone to the same directory name.'
+  install_file 600 "$manifest" <"$discovered"
 }
 
 validate_manifest() {
   [ -f "$manifest" ] && [ -r "$manifest" ] || fail 'Run agentbox sync-repos DIRECTORY before creating the machine.'
   [ -s "$manifest" ] || fail 'The repository manifest is empty.'
 
-  work_dir=$(mktemp -d "${TMPDIR:-/tmp}/agentbox-manifest.XXXXXX")
-  trap 'rm -rf "$work_dir"' EXIT HUP INT TERM
-  seen=$work_dir/seen
-  : >"$seen"
   while IFS= read -r remote_url; do
     [ -n "$remote_url" ] || fail 'The repository manifest contains an empty entry.'
     normalized=$(normalize_github_remote "$remote_url") || fail 'The repository manifest contains an unsupported remote.'
     [ "$normalized" = "$remote_url" ] || fail 'The repository manifest contains a non-normalized remote.'
-    clone_name=${normalized##*/}
-    clone_name=${clone_name%.git}
-    existing=$(awk -F '\t' -v name="$clone_name" '$1 == name { print $2; exit }' "$seen")
-    if [ -n "$existing" ] && [ "$existing" != "$normalized" ]; then
-      fail 'The repository manifest contains a destination collision.'
-    fi
-    if [ -z "$existing" ]; then
-      printf '%s\t%s\n' "$clone_name" "$normalized" >>"$seen"
-    fi
   done <"$manifest"
-  trap - EXIT HUP INT TERM
-  rm -rf "$work_dir"
+  check_clone_collisions "$manifest" || fail 'The repository manifest contains a destination collision.'
 }
 
 gh_stored() {
   env -u GH_TOKEN -u GITHUB_TOKEN gh "$@"
+}
+
+key_fields() {
+  awk '{ print $1 " " $2 }'
 }
 
 manage_key() {
@@ -294,7 +241,7 @@ manage_key() {
   title=$(cat "$key_title_file")
   [ -n "$title" ] || fail 'The existing key title is empty.'
   public_output=$(ssh-keygen -y -P '' -f "$private_key" 2>/dev/null) || fail 'The existing key must be an unencrypted Ed25519 private key.'
-  public=$(printf '%s\n' "$public_output" | awk '{ print $1 " " $2 }')
+  public=$(printf '%s\n' "$public_output" | key_fields)
   case $public in
     'ssh-ed25519 '*)
       ;;
@@ -303,14 +250,10 @@ manage_key() {
       ;;
   esac
 
-  public_tmp=$(mktemp "$key_dir/.github_ed25519.pub.XXXXXX")
-  printf '%s %s\n' "$public" "$title" >"$public_tmp"
-  chmod 644 "$public_tmp"
-  mv -f "$public_tmp" "$public_key"
+  printf '%s %s\n' "$public" "$title" | install_file 644 "$public_key"
 
   registered_output=$(gh_stored api user/keys --paginate --jq '.[].key') || fail 'Could not inspect registered GitHub keys.'
-  registered=$(printf '%s\n' "$registered_output" | awk '{ print $1 " " $2 }')
-  if ! printf '%s\n' "$registered" | grep -Fqx "$public"; then
+  if ! printf '%s\n' "$registered_output" | key_fields | grep -Fqx "$public"; then
     gh_stored api --method POST user/keys -f "title=$title" -f "key=$public" >/dev/null || fail 'Could not register the dedicated GitHub key.'
   fi
 }
@@ -338,48 +281,36 @@ install_ssh_alias() {
   mkdir -p "$ssh_dir/config.d"
   chmod 700 "$ssh_dir" "$ssh_dir/config.d"
 
-  if [ -L "$ssh_alias" ]; then
-    fail 'Refusing to replace a symlinked Agentbox SSH alias file.'
-  fi
-  write_alias=true
-  if [ -e "$ssh_alias" ]; then
-    if [ ! -f "$ssh_alias" ]; then
-      fail 'Refusing to replace a conflicting Agentbox SSH alias file.'
-    fi
+  require_replaceable_file "$ssh_alias" 'Agentbox SSH alias file'
+  if [ -f "$ssh_alias" ]; then
     current_alias=$(cat "$ssh_alias")
-    if [ "$current_alias" = "$alias_content" ]; then
-      write_alias=false
-    elif [ "$current_alias" != "$old_alias_content" ] && [ "$current_alias" != "$previous_alias_content" ]; then
-      fail 'Refusing to replace a conflicting Agentbox SSH alias file.'
-    fi
+    case $current_alias in
+      "$alias_content"|"$old_alias_content"|"$previous_alias_content")
+        ;;
+      *)
+        fail 'Refusing to replace a conflicting Agentbox SSH alias file.'
+        ;;
+    esac
   fi
+  printf '%s\n' "$alias_content" | install_file 600 "$ssh_alias"
 
-  if [ "$write_alias" = true ]; then
-    alias_tmp=$(mktemp "$ssh_dir/config.d/.agentbox.XXXXXX")
-    printf '%s\n' "$alias_content" >"$alias_tmp"
-    chmod 600 "$alias_tmp"
-    mv "$alias_tmp" "$ssh_alias"
-  fi
-
-  if [ -L "$ssh_config" ]; then
-    fail 'Refusing to edit a symlinked main SSH config.'
-  fi
+  require_replaceable_file "$ssh_config" 'main SSH config'
   include='Include ~/.ssh/config.d/agentbox'
-  if [ -e "$ssh_config" ] && [ ! -f "$ssh_config" ]; then
-    fail 'Refusing to edit a non-file main SSH config.'
-  fi
   if [ -f "$ssh_config" ] && grep -Fx "$include" "$ssh_config" >/dev/null; then
     return
   fi
+  {
+    printf '%s\n' "$include"
+    if [ -s "$ssh_config" ]; then
+      printf '\n'
+      cat "$ssh_config"
+    fi
+  } | install_file 600 "$ssh_config"
+}
 
-  config_tmp=$(mktemp "$ssh_dir/.config.XXXXXX")
-  printf '%s\n' "$include" >"$config_tmp"
-  if [ -f "$ssh_config" ] && [ -s "$ssh_config" ]; then
-    printf '\n' >>"$config_tmp"
-    cat "$ssh_config" >>"$config_tmp"
-  fi
-  chmod 600 "$config_tmp"
-  mv "$config_tmp" "$ssh_config"
+prepare_host_access() {
+  manage_key
+  install_ssh_alias
 }
 
 machine_exists() {
@@ -393,7 +324,6 @@ configure_machine_resources() {
 }
 
 validate_machine() {
-  require_command jq
   info=$(orb info "$machine" -f json 2>/dev/null) || fail 'Could not inspect the existing workbox machine.'
   actual_distribution=$(printf '%s\n' "$info" | jq -r '.record.image.distro')
   actual_version=$(printf '%s\n' "$info" | jq -r '.record.image.version')
@@ -423,20 +353,7 @@ validate_machine() {
   [ "$lan_exposure" = false ] || fail 'OrbStack exposes guest ports to the LAN.'
 }
 
-create_machine() {
-  load_machine_template
-  validate_manifest
-  require_orb
-  if machine_exists; then
-    validate_machine
-    configure_machine_resources
-    manage_key
-    install_ssh_alias
-    return
-  fi
-
-  manage_key
-  install_ssh_alias
+provision_machine() {
   orb config set machines.expose_ports_to_lan false
   orb create \
     --isolated \
@@ -449,13 +366,26 @@ create_machine() {
     "$machine"
 }
 
+create_machine() {
+  load_machine_template
+  validate_manifest
+  require_orb
+  if machine_exists; then
+    validate_machine
+    configure_machine_resources
+    prepare_host_access
+  else
+    prepare_host_access
+    provision_machine
+  fi
+}
+
 rebuild_machine() {
   load_machine_template
   validate_manifest
   require_orb
   machine_exists || fail 'The workbox machine does not exist.'
-  manage_key
-  install_ssh_alias
+  prepare_host_access
   [ -t 0 ] && [ -t 1 ] || fail 'Rebuild requires an interactive terminal.'
 
   printf 'Rebuilding workbox permanently deletes all guest state.\n' >&2
@@ -464,29 +394,25 @@ rebuild_machine() {
   [ "$confirmation" = "$machine" ] || fail 'Rebuild cancelled.'
 
   orb delete --force "$machine"
-  orb config set machines.expose_ports_to_lan false
-  orb create \
-    --isolated \
-    --isolate-network \
-    --arch "$architecture" \
-    --cpus "$cpu_limit" \
-    --memory "${memory_limit_mib}M" \
-    --disk "${disk_limit_gib}G" \
-    "$distribution" \
-    "$machine"
+  provision_machine
 }
 
 [ "$#" -gt 0 ] || usage
 command=$1
 shift
+case $command in
+  sync-repos|shell)
+    ;;
+  *)
+    [ "$#" -eq 0 ] || usage
+    ;;
+esac
 
 case $command in
   create)
-    [ "$#" -eq 0 ] || usage
     create_machine
     ;;
   key)
-    [ "$#" -eq 0 ] || usage
     manage_key
     ;;
   sync-repos)
@@ -500,23 +426,15 @@ case $command in
       orbctl run --machine "$machine" /usr/bin/env -- "$@"
     fi
     ;;
-  start)
-    [ "$#" -eq 0 ] || usage
+  start|stop)
     require_orb
-    orb start "$machine"
-    ;;
-  stop)
-    [ "$#" -eq 0 ] || usage
-    require_orb
-    orb stop "$machine"
+    orb "$command" "$machine"
     ;;
   status)
-    [ "$#" -eq 0 ] || usage
     require_orb
     orb info "$machine"
     ;;
   rebuild)
-    [ "$#" -eq 0 ] || usage
     rebuild_machine
     ;;
   *)

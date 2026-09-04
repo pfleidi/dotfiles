@@ -11,7 +11,9 @@ test_home=$test_root/home
 config_home=$test_home/.config
 manifest=$config_home/agentbox/repos
 machine_template=$repo/config/agentbox/workbox.json
-mkdir -p "$test_home"
+fake_bin=$test_root/fake-bin
+mkdir -p "$test_home" "$fake_bin"
+export AGENTBOX_TEST_LOG="$test_root/shell-arguments"
 
 fail() {
   printf '%s\n' "$1" >&2
@@ -22,20 +24,32 @@ create_repository() {
   directory=$1
   remote_name=$2
   remote_url=$3
-  mkdir -p "$directory"
   git init -q "$directory"
   git -C "$directory" remote add "$remote_name" "$remote_url"
 }
 
-run_sync() {
-  HOME=$test_home XDG_CONFIG_HOME=$config_home "$agentbox" sync-repos "$1"
+run_agentbox() {
+  HOME=$test_home XDG_CONFIG_HOME=$config_home "$agentbox" "$@"
+}
+
+run_agentbox_with_fakes() {
+  PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home "$agentbox" "$@"
+}
+
+fake_command() {
+  cat >"$fake_bin/$1"
+  chmod +x "$fake_bin/$1"
+}
+
+assert_file_content() {
+  cmp -s - "$1" || fail "$2"
 }
 
 assert_manifest_unchanged_after_failure() {
   failure_source=$1
   expected_error=$2
   cp "$manifest" "$test_root/manifest.before"
-  if run_sync "$failure_source" >"$test_root/stdout" 2>"$test_root/stderr"; then
+  if run_agentbox sync-repos "$failure_source" >/dev/null 2>"$test_root/stderr"; then
     fail 'Expected repository synchronization to fail.'
   fi
   grep -Fqx "$expected_error" "$test_root/stderr" || fail 'Repository synchronization failed for the wrong reason.'
@@ -43,7 +57,6 @@ assert_manifest_unchanged_after_failure() {
 }
 
 source_tree=$test_root/source
-mkdir -p "$source_tree/recursive/deep" "$source_tree/plain"
 create_repository "$source_tree/recursive/deep/https" origin https://github.com/example/alpha.git
 create_repository "$source_tree/scp" origin git@github.com:example/bravo.git
 create_repository "$source_tree/ssh" origin ssh://git@github.com/example/charlie.git
@@ -51,20 +64,17 @@ create_repository "$source_tree/fallback" origin https://example.invalid/example
 git -C "$source_tree/fallback" remote add github git@github.com:example/delta.git
 create_repository "$source_tree/parent" origin git@github.com:example/parent.git
 create_repository "$source_tree/parent/nested" origin git@github.com:example/must-not-appear.git
+mkdir -p "$source_tree/plain"
 
-run_sync "$source_tree"
+run_agentbox sync-repos "$source_tree"
 
-cat >"$test_root/expected" <<'EOF'
+assert_file_content "$manifest" 'Repository discovery or normalization produced the wrong manifest.' <<'EOF'
 git@github.com:example/alpha.git
 git@github.com:example/bravo.git
 git@github.com:example/charlie.git
 git@github.com:example/delta.git
 git@github.com:example/parent.git
 EOF
-cmp -s "$test_root/expected" "$manifest" || fail 'Repository discovery or normalization produced the wrong manifest.'
-if grep -F "$source_tree" "$manifest" >/dev/null; then
-  fail 'The manifest retained the source directory.'
-fi
 
 case $(uname -s) in
   Darwin)
@@ -78,19 +88,17 @@ esac
 
 template_home=$test_root/template-home
 mkdir -p "$template_home"
-if HOME=$template_home XDG_CONFIG_HOME=$template_home/.config "$agentbox" create >"$test_root/stdout" 2>"$test_root/stderr"; then
+if HOME=$template_home XDG_CONFIG_HOME=$template_home/.config "$agentbox" create >/dev/null 2>"$test_root/stderr"; then
   fail 'Expected create without a repository manifest to fail.'
 fi
 grep -Fqx 'Run agentbox sync-repos DIRECTORY before creating the machine.' "$test_root/stderr" || fail 'The checked-in machine template did not pass validation.'
 jq -e '.distribution == "ubuntu" and .architecture == "arm64" and .cpus == 8 and .memory_mib == 8192 and .disk_gib == 100' "$machine_template" >/dev/null || fail 'The checked-in machine template has unexpected values.'
 
-fake_bin=$test_root/fake-bin
-mkdir -p "$fake_bin"
-cat >"$fake_bin/uname" <<'EOF'
+fake_command uname <<'EOF'
 #!/bin/sh
 printf 'Darwin\n'
 EOF
-cat >"$fake_bin/orb" <<'EOF'
+fake_command orb <<'EOF'
 #!/bin/sh
 case $* in
   'list -q')
@@ -112,7 +120,7 @@ case $* in
     ;;
 esac
 EOF
-cat >"$fake_bin/gh" <<'EOF'
+fake_command gh <<'EOF'
 #!/bin/sh
 case $* in
   'api user --jq .login')
@@ -126,21 +134,20 @@ case $* in
     ;;
 esac
 EOF
-cat >"$fake_bin/ssh-keygen" <<'EOF'
+fake_command ssh-keygen <<'EOF'
 #!/bin/sh
 printf 'ssh-ed25519 AAAATEST\n'
 EOF
-cat >"$fake_bin/orbctl" <<'EOF'
+fake_command orbctl <<'EOF'
 #!/bin/sh
 printf '%s\n' "$@" >"$AGENTBOX_TEST_LOG"
 EOF
-chmod +x "$fake_bin/uname" "$fake_bin/orb" "$fake_bin/gh" "$fake_bin/ssh-keygen" "$fake_bin/orbctl"
 
 key_path=$config_home/agentbox/keys/workbox/github_ed25519
 mkdir -p "$(dirname "$key_path")"
 printf 'synthetic private key\n' >"$key_path"
 printf 'synthetic title\n' >"$key_path.title"
-PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home "$agentbox" create
+run_agentbox_with_fakes create
 
 combined_ssh_config=$test_root/combined-ssh-config
 cat "$test_home/.ssh/config.d/agentbox" >"$combined_ssh_config"
@@ -157,12 +164,11 @@ Host workbox
     IdentitiesOnly yes
     UserKnownHostsFile ~/.orbstack/ssh/known_hosts
 EOF
-PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home "$agentbox" create
+run_agentbox_with_fakes create
 grep -Fqx '    ForwardAgent no' "$test_home/.ssh/config.d/agentbox" || fail 'The previous Agentbox SSH alias was not migrated.'
 
-shell_log=$test_root/shell-arguments
-PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home AGENTBOX_TEST_LOG=$shell_log "$agentbox" shell --user root id -u
-cat >"$test_root/expected-shell-arguments" <<'EOF'
+run_agentbox_with_fakes shell --user root id -u
+assert_file_content "$AGENTBOX_TEST_LOG" 'Shell command arguments crossed the OrbStack option boundary.' <<'EOF'
 run
 --machine
 workbox
@@ -173,15 +179,13 @@ root
 id
 -u
 EOF
-cmp -s "$test_root/expected-shell-arguments" "$shell_log" || fail 'Shell command arguments crossed the OrbStack option boundary.'
 
-PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home AGENTBOX_TEST_LOG=$shell_log "$agentbox" shell
-cat >"$test_root/expected-shell-arguments" <<'EOF'
+run_agentbox_with_fakes shell
+assert_file_content "$AGENTBOX_TEST_LOG" 'Shell without a command no longer opens an interactive session.' <<'EOF'
 run
 --machine
 workbox
 EOF
-cmp -s "$test_root/expected-shell-arguments" "$shell_log" || fail 'Shell without a command no longer opens an interactive session.'
 
 collision=$test_root/collision
 create_repository "$collision/one" origin git@github.com:first/shared.git
