@@ -116,6 +116,18 @@ Starship uses the managed `~/.config/starship.toml` prompt configuration. Direnv
 
 After a fresh bootstrap, run `claude` and `codex` interactively if either CLI still needs authentication.
 
+## 1Password CLI on Linux
+
+Linux bootstrap installs `op`. Authenticate inside Linux rather than through
+1Password for Mac:
+
+```sh
+op account add
+eval "$(op signin)"
+```
+
+`op account add` is only needed the first time.
+
 ## Agentbox repository manifest
 
 Generate the private repository manifest from an existing directory of Git
