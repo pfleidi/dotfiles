@@ -1,16 +1,15 @@
 # Dotfiles
 
 This repository manages a macOS-first development environment with mise. Shared
-configuration also supports Linux machines without changing the macOS package
-and configuration defaults.
+configuration also supports Ubuntu and Debian-based Linux machines without
+changing the macOS package and configuration defaults.
 
 The checked-in LazyVim lockfile pins editor plugin versions.
 
 `mise.toml` contains shared state. Mise automatically adds `mise.macos.toml` or
 `mise.linux.toml` through the managed global `miserc.toml`. macOS remains the
-primary setup and keeps Homebrew ownership of its packages. Linux uses its
-native package manager for system dependencies and mise for versioned command
-line tools.
+primary setup and keeps Homebrew ownership of its packages. The Linux layer uses
+apt for system dependencies and mise for versioned command-line tools.
 
 ## Fresh macOS setup
 
@@ -135,6 +134,42 @@ Zsh keeps completion state under `~/.cache/zsh`. Ruby version management is not 
 Starship uses the managed `~/.config/starship.toml` prompt configuration. Direnv has no global configuration; its official Oh My Zsh plugin provides the shell hook.
 
 After a fresh bootstrap, run `claude` and `codex` interactively if either CLI still needs authentication.
+
+## 1Password CLI on Linux
+
+Linux bootstrap installs `op`. Authenticate inside Linux rather than through
+1Password for Mac:
+
+```sh
+op account add
+eval "$(op signin)"
+```
+
+`op account add` is only needed the first time.
+
+## Agentbox repository manifest
+
+Generate the private repository manifest from an existing directory of Git
+working trees:
+
+```sh
+agentbox sync-repos DIRECTORY
+```
+
+The command searches recursively, stops below each working tree, and writes
+only normalized GitHub SSH remotes to `~/.config/agentbox/repos`. It rejects
+unsupported or credential-bearing remotes and clone-directory collisions. A
+failed scan leaves the previous manifest unchanged; the source directory is
+not stored.
+
+## Agentbox machine template
+
+The versioned `config/agentbox/workbox.json` template selects the distribution,
+architecture, CPU count, memory in MiB, and disk size in GiB. `agentbox create`
+validates the file before touching OrbStack, uses it for new machines, and
+reapplies its resource limits to an existing isolated machine without deleting
+guest data. A distribution without a version, such as `ubuntu`, follows
+OrbStack's current default release.
 
 ## Rollback
 

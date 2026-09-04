@@ -1,0 +1,7 @@
+{
+  "distribution": "ubuntu",
+  "architecture": "arm64",
+  "cpus": 8,
+  "memory_mib": 8192,
+  "disk_gib": 100
+}

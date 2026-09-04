@@ -42,6 +42,9 @@ test "$(realpath "$HOME/.config/mise/config.toml")" = "$repo/mise.toml"
 test "$(realpath "$HOME/.config/mise/config.$platform.toml")" = "$repo/mise.$platform.toml"
 test "$(cat "$HOME/.config/mise/miserc.toml")" = "auto_env = true"
 
+section "Agentbox"
+tests/agentbox
+
 section "managed repositories"
 mise bootstrap repos status --missing
 test -r "$HOME/.oh-my-zsh/oh-my-zsh.sh"
@@ -56,13 +59,13 @@ test ! -L "$HOME/.codex/AGENTS.md"
 
 section "managed tools"
 if [ "$platform" = macos ]; then
-  for tool in nvim go gopls rg delta hunk fd tree-sitter starship direnv herdr kanban-md lazygit git-lfs tmux claude codex orb; do
+  for tool in nvim go gopls gh jq rg delta hunk fd tree-sitter starship direnv herdr kanban-md lazygit git-lfs tmux claude codex orb; do
     check_homebrew_tool "$tool"
   done
   test -r "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
   test -x "$(dirname "$(realpath "$brew_bin/codex")")/codex-code-mode-host"
 else
-  for tool in nvim go gopls node pnpm rg delta hunk fd tree-sitter starship direnv herdr lazygit git-lfs tmux claude codex gh jq yq shellcheck; do
+  for tool in nvim go gopls node pnpm op rg delta hunk fd tree-sitter starship direnv herdr lazygit git-lfs tmux claude codex gh jq yq shellcheck; do
     command -v "$tool"
   done
   test -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
