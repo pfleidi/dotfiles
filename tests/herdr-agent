@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+
+import errno
+import json
+import os
+from pathlib import Path
+import pty
+import select
+import signal
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+
+
+LAUNCHER = Path(__file__).resolve().parents[1] / "bin/herdr-agent"
+
+
+class AgentSelectionTest(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory(prefix="herdr-agent-test-")
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        self.bin = self.root / "bin"
+        self.bin.mkdir()
+        self.log = self.root / "launch.json"
+        self.env = dict(os.environ, PATH=str(self.bin), HERDR_ENV="1",
+                        HERDR_PANE_ID="w1:p2", LAUNCH_LOG=str(self.log))
+        self.output = b""
+        self.executable("herdr", "#!/bin/sh\nexit 0\n")
+
+    def executable(self, name, contents):
+        path = self.bin / name
+        path.write_text(contents)
+        path.chmod(0o755)
+
+    def available(self, *agents):
+        for agent in agents:
+            self.executable(agent, f"#!{sys.executable}\n" + '''
+import json
+import os
+from pathlib import Path
+import sys
+Path(os.environ["LAUNCH_LOG"]).write_text(json.dumps({
+    "agent": Path(sys.argv[0]).name,
+    "args": sys.argv[1:],
+    "cwd": os.getcwd(),
+    "pane": os.environ["HERDR_PANE_ID"],
+}))
+sys.exit(int(os.environ.get("LAUNCH_EXIT", "0")))
+''')
+
+    def start(self, *args):
+        self.master, slave = pty.openpty()
+        self.process = subprocess.Popen(
+            [str(LAUNCHER), *args], stdin=slave, stdout=slave, stderr=slave,
+            cwd=self.root, env=self.env, start_new_session=True,
+        )
+        os.close(slave)
+        self.addCleanup(self.stop)
+
+    def stop(self):
+        if self.process.poll() is None:
+            os.killpg(self.process.pid, signal.SIGKILL)
+        self.process.wait(timeout=3)
+        os.close(self.master)
+
+    def read_until(self, expected):
+        deadline = time.monotonic() + 3
+        while expected not in self.output:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                self.fail(f"Missing {expected!r} in {self.output!r}")
+            ready, _, _ = select.select([self.master], [], [], remaining)
+            if not ready:
+                continue
+            try:
+                chunk = os.read(self.master, 8192)
+            except OSError as error:
+                if error.errno != errno.EIO:
+                    raise
+                chunk = b""
+            if not chunk:
+                self.fail(f"Terminal closed before {expected!r}: {self.output!r}")
+            self.output += chunk
+
+    def choose(self, choice):
+        os.write(self.master, choice)
+
+    def assert_launch(self, agent, args):
+        self.assertEqual(self.process.wait(timeout=3), 0)
+        self.assertEqual(json.loads(self.log.read_text()), {
+            "agent": agent, "args": args, "cwd": str(self.root.resolve()),
+            "pane": "w1:p2",
+        })
+
+    def test_codex_preserves_prompt_and_context(self):
+        self.available("codex", "claude")
+        prompt = "--resume\nLiteral 'quotes', $(touch injected), `touch injected` and $HOME"
+        self.start("--", prompt)
+        self.read_until(b"Agent: ")
+        self.assertIn(b"c) Codex", self.output)
+        self.assertIn(b"l) Claude Code", self.output)
+        self.assertFalse(self.log.exists())
+        self.choose(b"c\n")
+        self.assert_launch("codex", ["--", prompt])
+        self.assertFalse((self.root / "injected").exists())
+
+    def test_claude_preserves_prompt_and_context(self):
+        self.available("claude")
+        self.start("--", "Review the current task.")
+        self.read_until(b"Agent: ")
+        self.assertNotIn(b"c) Codex", self.output)
+        self.choose(b"claude\n")
+        self.assert_launch("claude", ["--", "Review the current task."])
+
+    def test_single_agent_still_waits_for_explicit_choice(self):
+        self.available("codex")
+        self.start()
+        self.read_until(b"Agent: ")
+        self.assertNotIn(b"l) Claude Code", self.output)
+        time.sleep(0.1)
+        self.assertIsNone(self.process.poll())
+        self.assertFalse(self.log.exists())
+        self.choose(b"\nclaude\n$(touch injected)\n")
+        self.read_until(b"Choose one of the available agents")
+        self.assertIsNone(self.process.poll())
+        self.assertFalse(self.log.exists())
+        self.choose(b"codex\n")
+        self.assert_launch("codex", [])
+        self.assertFalse((self.root / "injected").exists())
+
+    def test_cancel_does_not_launch(self):
+        self.available("codex", "claude")
+        self.start()
+        self.read_until(b"Agent: ")
+        self.choose(b"q\n")
+        self.assertEqual(self.process.wait(timeout=3), 130)
+        self.assertFalse(self.log.exists())
+
+    def test_eof_does_not_launch(self):
+        self.available("claude")
+        self.start()
+        self.read_until(b"Agent: ")
+        self.choose(b"\x04")
+        self.assertEqual(self.process.wait(timeout=3), 130)
+        self.assertFalse(self.log.exists())
+
+    def test_interrupt_does_not_launch(self):
+        self.available("codex")
+        self.start()
+        self.read_until(b"Agent: ")
+        self.process.send_signal(signal.SIGINT)
+        self.assertNotEqual(self.process.wait(timeout=3), 0)
+        self.assertFalse(self.log.exists())
+
+    def test_missing_agents_fail_without_launch(self):
+        self.start()
+        self.read_until(b"No supported agent found")
+        self.assertEqual(self.process.wait(timeout=3), 1)
+        self.assertFalse(self.log.exists())
+
+    def test_selected_agent_failure_does_not_fall_back(self):
+        self.available("codex", "claude")
+        self.env["LAUNCH_EXIT"] = "17"
+        self.start()
+        self.read_until(b"Agent: ")
+        self.choose(b"l\n")
+        self.assertEqual(self.process.wait(timeout=3), 17)
+        self.assertEqual(json.loads(self.log.read_text())["agent"], "claude")
+
+    def test_noninteractive_input_is_rejected(self):
+        self.available("codex")
+        result = subprocess.run([str(LAUNCHER)], input="c\n", capture_output=True,
+                                text=True, env=self.env, timeout=3)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("interactive terminal", result.stderr)
+        self.assertFalse(self.log.exists())
+
+    def test_outside_herdr_is_rejected(self):
+        self.env.pop("HERDR_ENV")
+        result = subprocess.run([str(LAUNCHER)], capture_output=True, text=True,
+                                env=self.env, timeout=3)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("inside the destination Herdr pane", result.stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()

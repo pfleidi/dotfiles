@@ -45,6 +45,9 @@ test "$(cat "$HOME/.config/mise/miserc.toml")" = "auto_env = true"
 section "Agentbox"
 tests/agentbox
 
+section "Agent selector"
+tests/herdr-agent
+
 section "managed repositories"
 mise bootstrap repos status --missing
 test -r "$HOME/.oh-my-zsh/oh-my-zsh.sh"

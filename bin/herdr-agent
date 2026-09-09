@@ -1,0 +1,66 @@
+#!/bin/sh
+
+set -eu
+
+usage() {
+  printf 'Usage: herdr-agent [--] [PROMPT]\n' >&2
+}
+
+case ${1:-} in
+  -h|--help) usage; exit 0 ;;
+  --) shift ;;
+esac
+[ "$#" -le 1 ] || { usage; exit 2; }
+[ "${HERDR_ENV:-}" = 1 ] && [ -n "${HERDR_PANE_ID:-}" ] || {
+  printf 'Run herdr-agent inside the destination Herdr pane.\n' >&2
+  exit 1
+}
+[ -t 0 ] && [ -t 1 ] || {
+  printf 'Agent selection requires an interactive terminal.\n' >&2
+  exit 1
+}
+
+codex_path=$(command -v codex || true)
+claude_path=$(command -v claude || true)
+[ -n "$codex_path$claude_path" ] || {
+  printf 'No supported agent found in PATH (codex or claude).\n' >&2
+  exit 1
+}
+
+printf 'Choose an agent for this pane:\n'
+[ -z "$codex_path" ] || printf '  c) Codex\n'
+[ -z "$claude_path" ] || printf '  l) Claude Code\n'
+printf '  q) Cancel\n'
+herdr notification show 'Choose an agent' --body 'Waiting for your choice in the destination pane.' --sound request >/dev/null 2>&1 || :
+
+while :; do
+  printf 'Agent: '
+  if ! IFS= read -r choice; then
+    printf '\nAgent selection cancelled.\n' >&2
+    exit 130
+  fi
+  case $choice in
+    c|codex)
+      if [ -n "$codex_path" ]; then
+        agent_path=$codex_path
+        break
+      fi
+      ;;
+    l|claude)
+      if [ -n "$claude_path" ]; then
+        agent_path=$claude_path
+        break
+      fi
+      ;;
+    q|quit)
+      printf 'Agent selection cancelled.\n' >&2
+      exit 130
+      ;;
+  esac
+  printf 'Choose one of the available agents, or q to cancel.\n' >&2
+done
+
+if [ "$#" -eq 1 ]; then
+  exec "$agent_path" -- "$1"
+fi
+exec "$agent_path"

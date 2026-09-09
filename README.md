@@ -113,6 +113,26 @@ today list
 today board
 ```
 
+## Interactive agent launcher
+
+Run `herdr-agent` in the Herdr tab or pane where the agent should work:
+
+```sh
+herdr-agent
+herdr-agent -- 'Review the current changes.'
+```
+
+The script lists Codex and Claude Code when their executables are available in
+`PATH`. It waits for an explicit choice without a timeout or default, even when
+only one is installed. Blank or invalid input keeps the selector open; `q`,
+Ctrl-C, or end-of-input cancels. A failed launch never switches agents.
+
+The selected CLI starts a fresh interactive session in the same pane and working
+directory, with the optional prompt passed unchanged. Herdr detects it normally;
+use the pane ID to address it. Login and agent settings remain managed by each
+CLI. The script requires a Herdr pane with an interactive terminal and is
+available through the managed `~/.bin` link.
+
 ## Local and private configuration
 
 The public Git config includes this ignored machine-local file:
