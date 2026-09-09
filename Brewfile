@@ -1,6 +1,7 @@
 tap "anomalyco/tap", trusted: true
 tap "antopolskiy/tap", trusted: true
 tap "docker/tap", trusted: true
+brew "ast-grep"
 brew "cloudflared"
 brew "curl"
 brew "direnv"

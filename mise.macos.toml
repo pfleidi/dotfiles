@@ -9,6 +9,7 @@
 "brew:jq" = "latest"
 "brew:neovim" = "latest"
 "brew:ripgrep" = "latest"
+"brew:ast-grep" = "latest"
 "brew:hunk" = "latest"
 "brew:antopolskiy/tap/kanban-md" = "latest"
 "brew:git-delta" = "latest"
