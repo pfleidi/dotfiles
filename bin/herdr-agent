@@ -1,66 +1,213 @@
-#!/bin/sh
+#!/usr/bin/env python3
+"""Launch a fresh agent in a Herdr pane, or dispatch one in the background."""
 
-set -eu
+import argparse
+import json
+import os
+from pathlib import Path
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
 
-usage() {
-  printf 'Usage: herdr-agent [--] [PROMPT]\n' >&2
-}
 
-case ${1:-} in
-  -h|--help) usage; exit 0 ;;
-  --) shift ;;
-esac
-[ "$#" -le 1 ] || { usage; exit 2; }
-[ "${HERDR_ENV:-}" = 1 ] && [ -n "${HERDR_PANE_ID:-}" ] || {
-  printf 'Run herdr-agent inside the destination Herdr pane.\n' >&2
-  exit 1
-}
-[ -t 0 ] && [ -t 1 ] || {
-  printf 'Agent selection requires an interactive terminal.\n' >&2
-  exit 1
-}
+KINDS = ("codex", "claude")
 
-codex_path=$(command -v codex || true)
-claude_path=$(command -v claude || true)
-[ -n "$codex_path$claude_path" ] || {
-  printf 'No supported agent found in PATH (codex or claude).\n' >&2
-  exit 1
-}
 
-printf 'Choose an agent for this pane:\n'
-[ -z "$codex_path" ] || printf '  c) Codex\n'
-[ -z "$claude_path" ] || printf '  l) Claude Code\n'
-printf '  q) Cancel\n'
-herdr notification show 'Choose an agent' --body 'Waiting for your choice in the destination pane.' --sound request >/dev/null 2>&1 || :
+def herdr(*args):
+    result = subprocess.run(["herdr", *args], capture_output=True, text=True, timeout=15)
+    if result.returncode:
+        raise ValueError(f"herdr {' '.join(args[:2])}: {result.stderr.strip() or result.stdout.strip()}")
+    return json.loads(result.stdout)["result"] if result.stdout.strip() else {}
 
-while :; do
-  printf 'Agent: '
-  if ! IFS= read -r choice; then
-    printf '\nAgent selection cancelled.\n' >&2
-    exit 130
-  fi
-  case $choice in
-    c|codex)
-      if [ -n "$codex_path" ]; then
-        agent_path=$codex_path
-        break
-      fi
-      ;;
-    l|claude)
-      if [ -n "$claude_path" ]; then
-        agent_path=$claude_path
-        break
-      fi
-      ;;
-    q|quit)
-      printf 'Agent selection cancelled.\n' >&2
-      exit 130
-      ;;
-  esac
-  printf 'Choose one of the available agents, or q to cancel.\n' >&2
-done
 
-if [ "$#" -eq 1 ]; then
-  exec "$agent_path" -- "$1"
-fi
-exec "$agent_path"
+def agent_path(kind):
+    if kind not in KINDS:
+        raise ValueError("Cannot inherit a supported agent kind; pass --kind codex or --kind claude.")
+    path = shutil.which(kind)
+    if not path:
+        raise ValueError(f"Agent executable unavailable: {kind}")
+    return path
+
+
+def choose():
+    available = [kind for kind in KINDS if shutil.which(kind)]
+    if not available:
+        raise ValueError("No supported agent found in PATH (codex or claude).")
+    print("Choose an agent for this pane:")
+    for kind in available:
+        print("  c) Codex" if kind == "codex" else "  l) Claude Code")
+    print("  q) Cancel")
+    while True:
+        try:
+            choice = input("Agent: ")
+        except EOFError:
+            raise SystemExit(130)
+        kind = {"c": "codex", "l": "claude"}.get(choice, choice)
+        if kind in available:
+            return kind
+        if choice in ("q", "quit"):
+            raise SystemExit(130)
+        print("Choose one of the available agents, or q to cancel.")
+
+
+def run_agent(args):
+    if not os.environ.get("HERDR_PANE_ID"):
+        raise ValueError("Run herdr-agent inside the destination Herdr pane.")
+    if not sys.stdin.isatty() or not sys.stdout.isatty():
+        raise ValueError("Agent launch requires an interactive terminal.")
+    if args.prompt_file and args.prompt is not None:
+        raise ValueError("Use either --prompt-file or PROMPT.")
+    kind = choose() if args.choose else args.kind
+    executable = agent_path(kind)
+    prompt = args.prompt
+    if args.prompt_file:
+        prompt = Path(args.prompt_file).read_text()
+        if args.consume_prompt:
+            Path(args.prompt_file).unlink()
+    argv = [executable] if prompt is None else [executable, "--", prompt]
+    os.execv(executable, argv)
+
+
+def verify_shell(pane_id, cwd, workspace_id, tab_id):
+    pane = herdr("pane", "get", pane_id)["pane"]
+    if (pane["workspace_id"] != workspace_id or pane["tab_id"] != tab_id
+            or Path(pane["cwd"]).resolve() != cwd
+            or Path(pane.get("foreground_cwd") or pane["cwd"]).resolve() != cwd):
+        raise ValueError(f"Destination does not match the requested workspace/tab/cwd: {pane_id}")
+    if pane.get("agent"):
+        raise ValueError(f"Destination already contains an agent: {pane_id}")
+    deadline = time.monotonic() + 5
+    while True:
+        info = herdr("pane", "process-info", "--pane", pane_id)["process_info"]
+        processes = info.get("foreground_processes", [])
+        if processes and all(p["pid"] == info["shell_pid"] for p in processes):
+            return
+        if time.monotonic() >= deadline:
+            raise ValueError(f"Destination is not an idle shell: {pane_id}")
+        time.sleep(0.1)
+
+
+def dispatch(args, state):
+    cwd = Path(args.cwd).resolve(strict=True)
+    if not cwd.is_dir():
+        raise ValueError("--cwd must be a directory.")
+    prompt = Path(args.prompt_file).read_text()
+    if not prompt.strip() or "\0" in prompt:
+        raise ValueError("Handoff must contain text without NUL bytes.")
+    caller_id = args.caller_pane or os.environ.get("HERDR_PANE_ID")
+    caller = None
+    if caller_id:
+        # Resolve inherited IDs after a pane move; never consult UI focus.
+        pane = herdr("pane", "current", "--pane", caller_id)["pane"]
+        caller = herdr("agent", "get", pane["pane_id"])["agent"]
+    kind = args.kind or (caller.get("agent") if caller else None)
+    agent_path(kind)
+    state.update(kind=kind, cwd=str(cwd))
+    if caller:
+        state["caller_pane"] = caller["pane_id"]
+
+    if args.workspace:
+        workspace = herdr("workspace", "get", args.workspace)["workspace"]
+        panes = herdr("pane", "list", "--workspace", args.workspace)["panes"]
+        if not any(Path(p["cwd"]).resolve() == cwd for p in panes):
+            raise ValueError("Workspace has no pane rooted at --cwd; verify the task destination.")
+        state["workspace"] = workspace["workspace_id"]
+        created = herdr("tab", "create", "--workspace", state["workspace"],
+                        "--cwd", str(cwd), "--label", args.label or args.phase.title(), "--no-focus")
+    else:
+        created = herdr("workspace", "create", "--cwd", str(cwd),
+                        "--label", args.new_workspace, "--no-focus")
+        workspace = created["workspace"]
+        state["workspace"] = workspace["workspace_id"]
+    state.update(tab=created["tab"]["tab_id"], agent_pane=created["root_pane"]["pane_id"])
+    label = args.label or args.phase.title()
+    if args.new_workspace:
+        herdr("tab", "rename", state["tab"], label)
+    verify_shell(state["agent_pane"], cwd, state["workspace"], state["tab"])
+    if args.phase == "implementation":
+        split = herdr("pane", "split", "--pane", state["agent_pane"],
+                      "--direction", "right", "--ratio", "0.5", "--cwd", str(cwd), "--no-focus")
+        state["shell_pane"] = split["pane"]["pane_id"]
+        herdr("pane", "rename", state["shell_pane"], "Shell")
+        verify_shell(state["shell_pane"], cwd, state["workspace"], state["tab"])
+
+    if "Herdr peers:" not in prompt.splitlines():
+        prompt = prompt.rstrip() + "\nHerdr peers:\n"
+    else:
+        prompt = prompt.rstrip() + "\n"
+    if caller:
+        prompt += f"Dispatch caller: {caller['pane_id']}, tab {caller['tab_id']}, workspace {caller['workspace_id']}\n"
+    prompt += (f"Receiving pane: {state['agent_pane']} ({label}); kind {kind}\n"
+               f"Receiving tab: {state['tab']} ({label})\n"
+               f"Receiving workspace: {state['workspace']} ({workspace.get('label', '')})\n")
+    if "shell_pane" in state:
+        prompt += f"Implementation shell: {state['shell_pane']} (Shell); human-owned\n"
+    fd, path = tempfile.mkstemp(prefix="herdr-handoff-", suffix=".txt")
+    state["prompt_file"] = path
+    with os.fdopen(fd, "w") as file:
+        file.write(prompt)
+    command = shlex.join([str(Path(__file__).resolve()), "exec", "--kind", kind,
+                          "--prompt-file", path, "--consume-prompt"])
+    # Once submission starts, even a timeout cannot establish non-delivery.
+    state["status"] = "delivery_unknown"
+    herdr("pane", "run", state["agent_pane"], command)
+    state["status"] = "delivered"
+    print(json.dumps(state))
+
+
+def parser():
+    root = argparse.ArgumentParser(description=__doc__)
+    commands = root.add_subparsers(dest="command", required=True)
+    launch = commands.add_parser("exec", help="Start an agent in this interactive pane")
+    selection = launch.add_mutually_exclusive_group(required=True)
+    selection.add_argument("--kind", choices=KINDS)
+    selection.add_argument("--choose", action="store_true")
+    launch.add_argument("--prompt-file")
+    launch.add_argument("--consume-prompt", action="store_true",
+                        help="Delete the prompt file after reading it (used by dispatch)")
+    launch.add_argument("prompt", nargs="?")
+    send = commands.add_parser("dispatch", help="Create background layout and deliver a fresh agent launch")
+    destination = send.add_mutually_exclusive_group(required=True)
+    destination.add_argument("--workspace", help="Verified task workspace ID")
+    destination.add_argument("--new-workspace", metavar="LABEL")
+    send.add_argument("--cwd", required=True)
+    send.add_argument("--phase", required=True,
+                      help="Phase label; implementation adds a human shell to the right")
+    send.add_argument("--label", help="Override the phase tab label")
+    send.add_argument("--kind", choices=KINDS, help="Default: live caller agent kind")
+    send.add_argument("--caller-pane", help="Caller ID when inherited Herdr context is unavailable")
+    send.add_argument("--prompt-file", required=True)
+    return root
+
+
+def main():
+    argv = sys.argv[1:]
+    if argv and argv[0] not in ("dispatch", "exec", "-h", "--help"):
+        argv.insert(0, "exec")
+    args = parser().parse_args(argv)
+    state = {"status": "not_delivered"}
+    try:
+        if os.environ.get("HERDR_ENV") != "1":
+            raise ValueError("Run herdr-agent inside the destination Herdr pane or its agent context.")
+        if args.command == "dispatch":
+            dispatch(args, state)
+        else:
+            run_agent(args)
+        return 0
+    except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired) as error:
+        if args.command == "dispatch":
+            print(json.dumps({**state, "error": str(error)}), file=sys.stderr)
+        else:
+            print(str(error), file=sys.stderr)
+        return 1
+    except KeyboardInterrupt:
+        if args.command == "dispatch":
+            print(json.dumps({**state, "error": "Interrupted"}), file=sys.stderr)
+        return 130
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

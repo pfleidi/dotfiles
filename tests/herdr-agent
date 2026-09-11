@@ -17,7 +17,7 @@ import unittest
 LAUNCHER = Path(__file__).resolve().parents[1] / "bin/herdr-agent"
 
 
-class AgentSelectionTest(unittest.TestCase):
+class LauncherTestCase(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory(prefix="herdr-agent-test-")
         self.addCleanup(self.directory.cleanup)
@@ -27,6 +27,7 @@ class AgentSelectionTest(unittest.TestCase):
         self.log = self.root / "launch.json"
         self.env = dict(os.environ, PATH=str(self.bin), HERDR_ENV="1",
                         HERDR_PANE_ID="w1:p2", LAUNCH_LOG=str(self.log))
+        os.symlink(sys.executable, self.bin / "python3")
         self.output = b""
         self.executable("herdr", "#!/bin/sh\nexit 0\n")
 
@@ -62,7 +63,7 @@ sys.exit(int(os.environ.get("LAUNCH_EXIT", "0")))
 
     def stop(self):
         if self.process.poll() is None:
-            os.killpg(self.process.pid, signal.SIGKILL)
+            self.process.kill()
         self.process.wait(timeout=3)
         os.close(self.master)
 
@@ -94,6 +95,11 @@ sys.exit(int(os.environ.get("LAUNCH_EXIT", "0")))
             "agent": agent, "args": args, "cwd": str(self.root.resolve()),
             "pane": "w1:p2",
         })
+
+
+class AgentSelectionTest(LauncherTestCase):
+    def start(self, *args):
+        super().start("--choose", *args)
 
     def test_codex_preserves_prompt_and_context(self):
         self.available("codex", "claude")
@@ -172,7 +178,7 @@ sys.exit(int(os.environ.get("LAUNCH_EXIT", "0")))
 
     def test_noninteractive_input_is_rejected(self):
         self.available("codex")
-        result = subprocess.run([str(LAUNCHER)], input="c\n", capture_output=True,
+        result = subprocess.run([str(LAUNCHER), "--choose"], input="c\n", capture_output=True,
                                 text=True, env=self.env, timeout=3)
         self.assertEqual(result.returncode, 1)
         self.assertIn("interactive terminal", result.stderr)
@@ -180,10 +186,198 @@ sys.exit(int(os.environ.get("LAUNCH_EXIT", "0")))
 
     def test_outside_herdr_is_rejected(self):
         self.env.pop("HERDR_ENV")
-        result = subprocess.run([str(LAUNCHER)], capture_output=True, text=True,
+        result = subprocess.run([str(LAUNCHER), "--choose"], capture_output=True, text=True,
                                 env=self.env, timeout=3)
         self.assertEqual(result.returncode, 1)
         self.assertIn("inside the destination Herdr pane", result.stderr)
+
+
+class DispatchTest(LauncherTestCase):
+    def setUp(self):
+        super().setUp()
+        self.available("codex", "claude")
+        self.worktree = self.root / "work tree's directory"
+        self.worktree.mkdir()
+        self.prompt = self.root / "handoff.txt"
+        self.prompt.write_text("Task: synthetic\nNext: the user's $(touch injected); `touch injected`\n")
+        self.calls = self.root / "calls.jsonl"
+        self.env.update(CALLS=str(self.calls), WORKTREE=str(self.worktree), CALLER_KIND="codex")
+        self.executable("herdr", f"#!{sys.executable}\n" + '''
+import json
+import os
+from pathlib import Path
+import sys
+a = sys.argv[1:]
+with open(os.environ["CALLS"], "a") as f:
+    f.write(json.dumps(a) + "\\n")
+operation = " ".join(a[:2])
+if operation == os.environ.get("FAIL_OPERATION"):
+    print("synthetic failure", file=sys.stderr)
+    sys.exit(1)
+cwd = os.environ["WORKTREE"]
+workspace = {"workspace_id": "w2", "label": "Task"}
+tab = {"tab_id": "w2:t2", "workspace_id": "w2"}
+def pane(id="w2:p2"):
+    return {"pane_id": id, "tab_id": "w2:t2", "workspace_id": "w2", "cwd": cwd}
+if operation == "pane current":
+    r = {"pane": {"pane_id": "w1:p2"}}
+elif operation == "agent get":
+    r = {"agent": {"pane_id": "w1:p2", "tab_id": "w1:t1", "workspace_id": "w1",
+                   "agent": os.environ["CALLER_KIND"]}}
+elif operation == "workspace get":
+    r = {"workspace": workspace}
+elif operation == "pane list":
+    p = pane()
+    if os.environ.get("WRONG_WORKSPACE_CWD"):
+        p["cwd"] = "/unrelated"
+    r = {"panes": [p]}
+elif operation in ("workspace create", "tab create"):
+    r = {"workspace": workspace, "tab": tab, "root_pane": pane()}
+elif operation == "pane get":
+    p = pane(a[2])
+    if os.environ.get("WRONG_DESTINATION"):
+        p["tab_id"] = "w9:t1"
+    if os.environ.get("OCCUPIED_DESTINATION"):
+        p["agent"] = "claude"
+    r = {"pane": p}
+elif operation == "pane process-info":
+    r = {"process_info": {"shell_pid": 42, "foreground_processes": [{"pid": 42}]}}
+elif operation == "pane split":
+    r = {"pane": pane("w2:p3")}
+elif operation in ("tab rename", "pane rename", "pane run"):
+    r = {}
+else:
+    raise SystemExit("Unexpected Herdr call: " + repr(a))
+print(json.dumps({"result": r}))
+''')
+
+    def dispatch(self, *extra, phase="implementation", new=False):
+        destination = ["--new-workspace", "Task"] if new else ["--workspace", "w2"]
+        result = subprocess.run(
+            [str(LAUNCHER), "dispatch", *destination, "--cwd", str(self.worktree),
+             "--phase", phase, "--prompt-file", str(self.prompt), *extra],
+            capture_output=True, text=True, env=self.env, timeout=15,
+        )
+        state = json.loads(result.stdout if result.returncode == 0 else result.stderr)
+        if "prompt_file" in state:
+            self.addCleanup(Path(state["prompt_file"]).unlink, missing_ok=True)
+        return result, state
+
+    def commands(self):
+        return [json.loads(line) for line in self.calls.read_text().splitlines()]
+
+    def test_inherited_kind_background_layout_and_prompt_transport(self):
+        self.env["CALLER_KIND"] = "claude"
+        result, state = self.dispatch()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(state["kind"], "claude")
+        self.assertEqual(state["status"], "delivered")
+        self.assertEqual(state["shell_pane"], "w2:p3")
+        calls = self.commands()
+        creations = [c for c in calls if c[:2] in (["tab", "create"], ["pane", "split"])]
+        self.assertEqual(len(creations), 2)
+        for command in creations:
+            self.assertIn("--no-focus", command)
+            self.assertEqual(command[command.index("--cwd") + 1], str(self.worktree.resolve()))
+        split = creations[1]
+        self.assertEqual(split[split.index("--direction") + 1], "right")
+        self.assertEqual(split[split.index("--pane") + 1], "w2:p2")
+        launch = next(c[3] for c in calls if c[:2] == ["pane", "run"])
+        self.assertNotIn("the user's", launch)
+        payload = Path(state["prompt_file"]).read_text()
+        self.assertTrue(payload.startswith(self.prompt.read_text()))
+        self.assertIn("Receiving pane: w2:p2", payload)
+        self.assertIn("Implementation shell: w2:p3", payload)
+        self.assertEqual(Path(state["prompt_file"]).stat().st_mode & 0o777, 0o600)
+
+        # Exercise the actual pane command through a shell and a real PTY.
+        self.master, slave = pty.openpty()
+        self.process = subprocess.Popen(
+            ["/bin/sh", "-c", launch], stdin=slave, stdout=slave, stderr=slave,
+            env=dict(self.env, HERDR_PANE_ID="w2:p2"), cwd=self.worktree,
+        )
+        os.close(slave)
+        self.addCleanup(self.stop)
+        self.assertEqual(self.process.wait(timeout=5), 0)
+        self.assertEqual(json.loads(self.log.read_text()), {
+            "agent": "claude", "args": ["--", payload],
+            "cwd": str(self.worktree.resolve()), "pane": "w2:p2",
+        })
+        self.assertFalse((self.worktree / "injected").exists())
+        self.assertFalse(Path(state["prompt_file"]).exists())
+
+    def test_override_and_new_workspace_use_root_tab(self):
+        self.env["CALLER_KIND"] = "claude"
+        result, state = self.dispatch("--kind", "codex", phase="alignment", new=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(state["kind"], "codex")
+        calls = self.commands()
+        self.assertIn(["tab", "rename", "w2:t2", "Alignment"], calls)
+        self.assertEqual([c[:2] for c in calls if c[1] in ("create", "split")], [["workspace", "create"]])
+        self.assertIn("--no-focus", next(c for c in calls if c[:2] == ["workspace", "create"]))
+
+    def test_missing_context_requires_explicit_kind(self):
+        self.env.pop("HERDR_PANE_ID")
+        result, state = self.dispatch()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--kind", state["error"])
+        self.assertFalse(self.calls.exists())
+        result, state = self.dispatch("--kind", "claude")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("caller_pane", state)
+
+    def test_explicit_caller_works_without_inherited_context(self):
+        self.env.pop("HERDR_PANE_ID")
+        result, state = self.dispatch("--caller-pane", "w1:p2")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(state["kind"], "codex")
+
+    def test_unavailable_kind_fails_before_layout_creation(self):
+        (self.bin / "codex").unlink()
+        result, state = self.dispatch()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unavailable", state["error"])
+        self.assertFalse(any(c[1] in ("create", "split", "run") for c in self.commands()))
+
+    def test_workspace_mismatch_fails_before_creation(self):
+        self.env["WRONG_WORKSPACE_CWD"] = "1"
+        result, state = self.dispatch()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Workspace", state["error"])
+        self.assertFalse(any(c[1] in ("create", "run") for c in self.commands()))
+
+    def test_destination_mismatch_retains_ids_without_delivery(self):
+        self.env["WRONG_DESTINATION"] = "1"
+        result, state = self.dispatch()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(state["agent_pane"], "w2:p2")
+        self.assertEqual(state["status"], "not_delivered")
+        self.assertFalse(any(c[:2] == ["pane", "run"] for c in self.commands()))
+
+    def test_submission_error_retains_recovery_state_without_retry(self):
+        self.env["FAIL_OPERATION"] = "pane run"
+        result, state = self.dispatch()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(state["status"], "delivery_unknown")
+        self.assertEqual(state["tab"], "w2:t2")
+        self.assertEqual(state["shell_pane"], "w2:p3")
+        self.assertTrue(Path(state["prompt_file"]).exists())
+        self.assertEqual(sum(c[:2] == ["pane", "run"] for c in self.commands()), 1)
+
+    def test_occupied_destination_is_preserved(self):
+        self.env["OCCUPIED_DESTINATION"] = "1"
+        result, state = self.dispatch()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("already contains an agent", state["error"])
+        self.assertFalse(any(c[1] in ("run", "close", "send-keys") for c in self.commands()))
+
+    def test_split_failure_preserves_new_tab_without_launch(self):
+        self.env["FAIL_OPERATION"] = "pane split"
+        result, state = self.dispatch()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(state["agent_pane"], "w2:p2")
+        self.assertEqual(state["status"], "not_delivered")
+        self.assertFalse(any(c[1] in ("run", "close") for c in self.commands()))
 
 
 if __name__ == "__main__":

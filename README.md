@@ -113,25 +113,49 @@ today list
 today board
 ```
 
-## Interactive agent launcher
+## Herdr agent launcher
 
-Run `herdr-agent` in the Herdr tab or pane where the agent should work:
+`herdr-agent` requires Python 3 and Herdr and is available through the managed
+`~/.bin` link. Dispatch a fresh agent into an existing task workspace:
 
 ```sh
-herdr-agent
-herdr-agent -- 'Review the current changes.'
+herdr-agent dispatch --workspace "$task_workspace" --cwd "$worktree" \
+  --phase implementation --prompt-file "$handoff"
 ```
 
-The script lists Codex and Claude Code when their executables are available in
-`PATH`. It waits for an explicit choice without a timeout or default, even when
-only one is installed. Blank or invalid input keeps the selector open; `q`,
-Ctrl-C, or end-of-input cancels. A failed launch never switches agents.
+Use `--new-workspace 'Task label'` instead of `--workspace` for a new workspace.
+The first phase uses its root tab; existing workspaces receive a new phase tab.
+Implementation tabs include a human-owned shell to the right at the same working
+directory. All creation preserves focus. Resume existing agents and their shells
+through Herdr rather than dispatching a duplicate.
 
-The selected CLI starts a fresh interactive session in the same pane and working
-directory, with the optional prompt passed unchanged. Herdr detects it normally;
-use the pane ID to address it. Login and agent settings remain managed by each
-CLI. The script requires a Herdr pane with an interactive terminal and is
-available through the managed `~/.bin` link.
+The agent kind defaults to the live caller's Codex or Claude Code identity.
+`--kind codex` or `--kind claude` overrides it. When inherited pane context is
+unavailable, supply a verified `--caller-pane`, or an explicit kind with no caller.
+The wrapper never discovers the caller through UI focus or switches providers
+when launch fails. The caller supplies a verified task workspace and worktree;
+task interpretation, tracker updates, and worktree creation belong to the agent.
+
+Dispatch returns JSON with `workspace`, `tab`, `agent_pane`, `kind`, and an
+implementation `shell_pane`. `status: delivered` confirms command delivery, not
+agent readiness. Errors retain created IDs; `delivery_unknown` means submission
+may have arrived. Inspect that destination before retrying. The wrapper leaves
+created panes open and retains the original handoff. A private temporary copy
+carries peer IDs and is consumed by the receiving launcher; an undelivered copy
+is reported as `prompt_file` for recovery or cleanup.
+
+For a manual launch inside an interactive Herdr pane:
+
+```sh
+herdr-agent --choose
+herdr-agent --kind codex -- 'Review the current changes.'
+herdr-agent --kind claude --prompt-file "$handoff"
+```
+
+`--choose` waits for an explicit choice among installed CLIs; `q`, Ctrl-C, or
+end-of-input cancels. Each launch starts a fresh session in that pane, passing
+the prompt unchanged as one argument. Login and agent settings remain managed
+by each CLI. Use `herdr-agent dispatch --help` for dispatch options.
 
 ## Local and private configuration
 
