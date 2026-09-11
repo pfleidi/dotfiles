@@ -10,8 +10,8 @@ enabled = false
 
 [ui]
 agent_panel_sort = "spaces"
-status_indicators = "symbols"
+status_indicators = "dots"
 
 [theme]
-name = "catppuccin"
+name = "tokyo-night"
 auto_switch = false
