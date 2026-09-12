@@ -65,8 +65,13 @@ def run_agent(args):
     prompt = args.prompt
     if args.prompt_file:
         prompt = Path(args.prompt_file).read_text()
-        if args.consume_prompt:
-            Path(args.prompt_file).unlink()
+    if args.prepare:
+        result = subprocess.run([os.path.expanduser(args.prepare)], stdin=subprocess.DEVNULL,
+                                capture_output=True, text=True, timeout=60)
+        if result.returncode:
+            raise ValueError(f"Session preparation failed: {result.stderr.strip() or result.stdout.strip()}")
+    if args.prompt_file and args.consume_prompt:
+        Path(args.prompt_file).unlink()
     argv = [executable] if prompt is None else [executable, "--", prompt]
     os.execv(executable, argv)
 
@@ -149,8 +154,11 @@ def dispatch(args, state):
     state["prompt_file"] = path
     with os.fdopen(fd, "w") as file:
         file.write(prompt)
-    command = shlex.join([str(Path(__file__).resolve()), "exec", "--kind", kind,
-                          "--prompt-file", path, "--consume-prompt"])
+    launch = [str(Path(__file__).resolve()), "exec", "--kind", kind,
+              "--prompt-file", path, "--consume-prompt"]
+    if args.prepare:
+        launch.extend(["--prepare", args.prepare])
+    command = shlex.join(launch)
     # Once submission starts, even a timeout cannot establish non-delivery.
     state["status"] = "delivery_unknown"
     herdr("pane", "run", state["agent_pane"], command)
@@ -180,6 +188,9 @@ def parser():
     send.add_argument("--kind", choices=KINDS, help="Default: live caller agent kind")
     send.add_argument("--caller-pane", help="Caller ID when inherited Herdr context is unavailable")
     send.add_argument("--prompt-file", required=True)
+    for command in (launch, send):
+        command.add_argument("--prepare", metavar="EXECUTABLE",
+                             help="Run an executable in the destination before launch")
     return root
 
 

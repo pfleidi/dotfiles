@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import pty
 import select
+import shlex
 import signal
 import subprocess
 import sys
@@ -51,6 +52,22 @@ Path(os.environ["LAUNCH_LOG"]).write_text(json.dumps({
 }))
 sys.exit(int(os.environ.get("LAUNCH_EXIT", "0")))
 ''')
+
+    def install_preparation(self):
+        self.preparation = self.bin / "prepare session"
+        self.preparation_log = self.root / "preparation.json"
+        self.env["PREPARATION_LOG"] = str(self.preparation_log)
+        self.executable(self.preparation.name, f"#!{sys.executable}\n" + """
+import json
+import os
+from pathlib import Path
+import sys
+assert not Path(os.environ["LAUNCH_LOG"]).exists()
+Path(os.environ["PREPARATION_LOG"]).write_text(json.dumps({
+    "cwd": os.getcwd(), "stdin": sys.stdin.read(), "args": sys.argv[1:]}))
+print("synthetic preparation output")
+sys.exit(int(os.environ.get("PREPARATION_EXIT", "0")))
+""")
 
     def start(self, *args):
         self.master, slave = pty.openpty()
@@ -192,6 +209,56 @@ class AgentSelectionTest(LauncherTestCase):
         self.assertIn("inside the destination Herdr pane", result.stderr)
 
 
+class PreparationTest(LauncherTestCase):
+    def setUp(self):
+        super().setUp()
+        self.available("codex", "claude")
+        self.install_preparation()
+
+    def test_existing_calls_skip_preparation(self):
+        self.start("--kind", "codex", "--", "Existing call")
+        self.assert_launch("codex", ["--", "Existing call"])
+        self.assertFalse(self.preparation_log.exists())
+
+    def test_preparation_runs_before_launch(self):
+        self.start("exec", "--kind", "codex", "--prepare", str(self.preparation),
+                   "--", "Literal $HOME; `x`")
+        self.assert_launch("codex", ["--", "Literal $HOME; `x`"])
+        self.assertEqual(json.loads(self.preparation_log.read_text()), {
+            "cwd": str(self.root.resolve()), "stdin": "", "args": []})
+        try:
+            output = os.read(self.master, 8192)
+        except OSError as error:
+            if error.errno != errno.EIO:
+                raise
+            output = b""
+        self.assertNotIn(b"synthetic preparation output", output)
+
+    def test_preparation_failure_keeps_handoff_and_prevents_launch(self):
+        prompt = self.root / "handoff.txt"
+        prompt.write_text("Keep this handoff")
+        self.env["PREPARATION_EXIT"] = "1"
+        self.start("--kind", "claude", "--prepare", str(self.preparation),
+                   "--prompt-file", str(prompt), "--consume-prompt")
+        self.assertEqual(self.process.wait(timeout=3), 1)
+        self.assertTrue(self.preparation_log.exists())
+        self.assertFalse(self.log.exists())
+        self.assertTrue(prompt.exists())
+
+    def test_missing_preparation_prevents_launch(self):
+        self.preparation.unlink()
+        self.start("--kind", "codex", "--prepare", str(self.preparation))
+        self.assertEqual(self.process.wait(timeout=3), 1)
+        self.assertFalse(self.log.exists())
+
+    def test_cancel_skips_preparation(self):
+        self.start("--choose", "--prepare", str(self.preparation))
+        self.read_until(b"Agent: ")
+        self.choose(b"q\n")
+        self.assertEqual(self.process.wait(timeout=3), 130)
+        self.assertFalse(self.preparation_log.exists())
+
+
 class DispatchTest(LauncherTestCase):
     def setUp(self):
         super().setUp()
@@ -268,7 +335,8 @@ print(json.dumps({"result": r}))
 
     def test_inherited_kind_background_layout_and_prompt_transport(self):
         self.env["CALLER_KIND"] = "claude"
-        result, state = self.dispatch()
+        self.install_preparation()
+        result, state = self.dispatch("--prepare", str(self.preparation))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(state["kind"], "claude")
         self.assertEqual(state["status"], "delivered")
@@ -284,6 +352,9 @@ print(json.dumps({"result": r}))
         self.assertEqual(split[split.index("--pane") + 1], "w2:p2")
         launch = next(c[3] for c in calls if c[:2] == ["pane", "run"])
         self.assertNotIn("the user's", launch)
+        self.assertIn("--prepare", shlex.split(launch))
+        self.assertIn(str(self.preparation), shlex.split(launch))
+        self.assertFalse(self.preparation_log.exists())
         payload = Path(state["prompt_file"]).read_text()
         self.assertTrue(payload.startswith(self.prompt.read_text()))
         self.assertIn("Receiving pane: w2:p2", payload)
@@ -305,6 +376,8 @@ print(json.dumps({"result": r}))
         })
         self.assertFalse((self.worktree / "injected").exists())
         self.assertFalse(Path(state["prompt_file"]).exists())
+        self.assertEqual(json.loads(self.preparation_log.read_text())["cwd"],
+                         str(self.worktree.resolve()))
 
     def test_override_and_new_workspace_use_root_tab(self):
         self.env["CALLER_KIND"] = "claude"
@@ -312,6 +385,8 @@ print(json.dumps({"result": r}))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(state["kind"], "codex")
         calls = self.commands()
+        launch = next(c[3] for c in calls if c[:2] == ["pane", "run"])
+        self.assertNotIn("--prepare", shlex.split(launch))
         self.assertIn(["tab", "rename", "w2:t2", "Alignment"], calls)
         self.assertEqual([c[:2] for c in calls if c[1] in ("create", "split")], [["workspace", "create"]])
         self.assertIn("--no-focus", next(c for c in calls if c[:2] == ["workspace", "create"]))
