@@ -101,6 +101,11 @@ Worktrunk creates worktrees under
 the home prefix per machine; repository paths are home-relative when possible,
 otherwise absolute. Existing worktrees keep their locations.
 
+Each worktree Worktrunk creates gets a `tmp/` directory for scratch files. When
+no ignore rule covers it, a `pre-start` hook appends `/tmp/` to the repository's
+`.git/info/exclude`, which applies to the main checkout and all its worktrees.
+The hook fails when `tmp` exists and is not a directory.
+
 Mise trusts a config in a worktree when the same path in the repository's main
 checkout is trusted, so new worktrees need no separate `mise trust`.
 
