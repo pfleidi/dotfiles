@@ -14,6 +14,7 @@ min_version = "2026.11.10"
 "~/.config/git/config" = "config/git/config"
 "~/.config/nvim" = "config/nvim"
 "~/.config/starship.toml" = "config/starship.toml"
+"~/.config/starship" = "config/starship"
 "~/.config/worktrunk/config.toml" = { source = "config/worktrunk/config.toml.tera", mode = "template" }
 "~/.vimrc" = "config/vim/vimrc"
 "~/.tmux.conf" = "tmux.conf"

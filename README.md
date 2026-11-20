@@ -190,7 +190,32 @@ here.
 
 Zsh keeps completion state under `~/.cache/zsh`. Ruby version management is not initialized globally; use mise in Ruby projects or opt into rbenv from local shell configuration on machines that need it.
 
-Starship uses the managed `~/.config/starship.toml` prompt configuration. Direnv has no global configuration; its official Oh My Zsh plugin provides the shell hook.
+Starship uses `~/.config/starship.toml` by default, with orange and yellow
+Gruvbox accents. Alternative configurations live in `~/.config/starship/`.
+To select one for a machine, add this to its `~/.zshrc.local`:
+
+```zsh
+export STARSHIP_CONFIG="$HOME/.config/starship/terracotta_teal.toml"
+```
+
+| Configuration | Username | Directory | Git |
+| --- | --- | --- | --- |
+| `~/.config/starship.toml` (default) | Orange | Yellow | Green |
+| `terracotta_teal.toml` | Terracotta | Ochre | Teal |
+| `copper_petrol.toml` | Copper | Mustard | Petrol |
+| `olive_plum.toml` | Olive | Bronze | Plum |
+| `teal_brick.toml` | Teal | Mustard | Brick |
+
+The four named alternatives use cream segment text with at least 4.8:1
+contrast. Their status symbols also meet 4.8:1 against the terminal background
+`#282c34`; contrast depends on the background configured in your terminal.
+
+Open a new shell to apply the choice, including an interactive SSH shell on
+that machine. Leave `STARSHIP_CONFIG` unset for the default, or set it to
+`$HOME/.config/starship.toml` to override an inherited choice. Each file is a
+complete configuration; apply shared layout changes to all five files.
+
+Direnv has no global configuration; its official Oh My Zsh plugin provides the shell hook.
 
 After a fresh bootstrap, run `claude` and `codex` interactively if either CLI still needs authentication.
 

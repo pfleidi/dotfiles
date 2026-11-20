@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+import tomllib
+import unittest
+
+
+REPO = Path(__file__).resolve().parents[1]
+ALTERNATIVES = {
+    "terracotta_teal": ("#a54e31", "#816328", "#366778"),
+    "copper_petrol": ("#a05622", "#7a6821", "#365c78"),
+    "olive_plum": ("#5a6f32", "#8f5e2d", "#66528e"),
+    "teal_brick": ("#33706b", "#7d6726", "#964047"),
+}
+
+
+def contrast(foreground, background):
+    def luminance(color):
+        rgb = [int(color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        linear = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
+                  for v in rgb]
+        return sum(v * weight for v, weight in zip(linear, (0.2126, 0.7152, 0.0722)))
+
+    dark, light = sorted((luminance(foreground), luminance(background)))
+    return (light + 0.05) / (dark + 0.05)
+
+
+class StarshipTestCase(unittest.TestCase):
+    def test_native_config_selection_and_rendering(self):
+        dotfiles = tomllib.loads((REPO / "mise.toml").read_text())["dotfiles"]
+        configs = [REPO / dotfiles["~/.config/starship.toml"]]
+        configs.extend(REPO / dotfiles["~/.config/starship"] / f"{name}.toml"
+                       for name in ALTERNATIVES)
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
+            for path in configs:
+                with self.subTest(config=path.name):
+                    config = tomllib.loads(path.read_text())
+                    palette = config["palettes"][config["palette"]]
+                    rendered = subprocess.run(
+                        ["starship", "module", "directory", "--path", directory],
+                        env=dict(os.environ, STARSHIP_CONFIG=str(path),
+                                 STARSHIP_CACHE=directory, TERM="xterm-256color"),
+                        text=True, capture_output=True,
+                    )
+                    self.assertEqual(rendered.returncode, 0, rendered.stderr)
+                    self.assertEqual(rendered.stderr, "")
+                    color = palette["color_yellow"].lstrip("#")
+                    rgb = ";".join(str(int(color[i:i + 2], 16)) for i in (0, 2, 4))
+                    self.assertIn(f"48;2;{rgb}", rendered.stdout)
+
+    def test_alternatives_match_previews_and_preserve_contrast(self):
+        for name, colors in ALTERNATIVES.items():
+            with self.subTest(palette=name):
+                config = tomllib.loads((REPO / f"config/starship/{name}.toml").read_text())
+                palette = config["palettes"][config["palette"]]
+                self.assertEqual(tuple(palette[key] for key in
+                                       ("color_orange", "color_yellow", "color_aqua")), colors)
+                for key in ("color_orange", "color_yellow", "color_aqua", "color_blue", "color_bg1"):
+                    self.assertGreaterEqual(contrast(palette["color_fg0"], palette[key]), 4.8, key)
+                self.assertGreaterEqual(contrast(palette["color_docker"], palette["color_bg3"]), 4.8)
+                for key in ("color_green", "color_red", "color_purple", "color_visual"):
+                    self.assertGreaterEqual(contrast(palette[key], "#282c34"), 4.8, key)
+
+
+if __name__ == "__main__":
+    unittest.main()

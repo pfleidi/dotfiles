@@ -48,6 +48,9 @@ tests/agentbox
 section "Agent selector"
 tests/herdr-agent
 
+section "Starship palettes"
+tests/starship
+
 section "managed repositories"
 mise bootstrap repos status --missing
 test -r "$HOME/.oh-my-zsh/oh-my-zsh.sh"
