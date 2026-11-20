@@ -57,8 +57,7 @@ test -r "$skills_repo/skills/task-implement/SKILL.md"
 test "$(realpath "$HOME/.agents/AGENTS.md")" = "$skills_repo/config/global-agents.md"
 test "$(realpath "$HOME/.agents/skills/pfleidi")" = "$skills_repo"
 test "$(realpath "$HOME/.claude/CLAUDE.md")" = "$skills_repo/config/global-agents.md"
-test ! -e "$HOME/.codex/AGENTS.md"
-test ! -L "$HOME/.codex/AGENTS.md"
+test "$(realpath "$HOME/.codex/AGENTS.md")" = "$skills_repo/config/global-agents.md"
 
 section "managed tools"
 if [ "$platform" = macos ]; then
