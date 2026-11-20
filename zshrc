@@ -47,6 +47,10 @@ fi
 # load oh-my-zsh
 [[ -r $ZSH/oh-my-zsh.sh ]] && source "$ZSH/oh-my-zsh.sh"
 
+if command -v wt >/dev/null 2>&1; then
+  eval "$(wt config shell init zsh)"
+fi
+
 # ============== Custom tweaks below this line ==============
 
 for zsh_rc in "$HOME"/.zsh/*.zsh(N); do

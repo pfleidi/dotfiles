@@ -1,0 +1,1 @@
+worktree-path = '''{% raw %}{% set home = {% endraw %}{{ (env.HOME ~ "/") | json_encode() }}{% raw %} %}~/worktrees/{{ (repo_path[(home | length):] if repo_path[:(home | length)] == home else repo_path) | sanitize_hash }}/{{ branch | sanitize }}{% endraw %}'''

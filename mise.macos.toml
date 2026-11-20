@@ -23,6 +23,7 @@
 "brew:zsh-syntax-highlighting" = "latest"
 "brew:tmux" = "latest"
 "brew:vim" = "latest"
+"brew:worktrunk" = "latest"
 
 [dotfiles]
 "~/Library/Application Support/lazygit/config.yml" = "config/lazygit/config.yml"
