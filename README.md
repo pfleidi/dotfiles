@@ -101,6 +101,9 @@ Worktrunk creates worktrees under
 the home prefix per machine; repository paths are home-relative when possible,
 otherwise absolute. Existing worktrees keep their locations.
 
+Mise trusts a config in a worktree when the same path in the repository's main
+checkout is trusted, so new worktrees need no separate `mise trust`.
+
 ## Daily task board
 
 The `today` command runs `kanban-md` against the same local board from any
