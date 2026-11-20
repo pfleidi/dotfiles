@@ -32,11 +32,9 @@ install_link() {
 }
 
 mkdir -p "$HOME/.agents/skills" "$HOME/.claude"
-if [ -e "$HOME/.codex/AGENTS.md" ] && [ ! -L "$HOME/.codex/AGENTS.md" ]; then
-  printf 'Remove the custom Codex instructions before bootstrapping: %s\n' "$HOME/.codex/AGENTS.md" >&2
-  exit 1
-fi
+
 install_link "$skills_repo/config/global-agents.md" "$HOME/.agents/AGENTS.md"
+install_link "$skills_repo/config/global-agents.md" "$HOME/.codex/AGENTS.md"
 install_link "$skills_repo" "$HOME/.agents/skills/pfleidi"
 install_link "$skills_repo/config/global-agents.md" "$HOME/.claude/CLAUDE.md"
 
