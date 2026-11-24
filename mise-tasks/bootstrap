@@ -31,7 +31,7 @@ install_link() {
   ln -s "$link_source" "$link_destination"
 }
 
-mkdir -p "$HOME/.agents/skills" "$HOME/.claude"
+mkdir -p "$HOME/.agents/skills" "$HOME/.claude" "$HOME/.codex"
 
 install_link "$skills_repo/config/global-agents.md" "$HOME/.agents/AGENTS.md"
 install_link "$skills_repo/config/global-agents.md" "$HOME/.codex/AGENTS.md"
