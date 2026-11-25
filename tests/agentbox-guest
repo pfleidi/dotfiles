@@ -130,7 +130,10 @@ rm "$test_root/home/.local/bin/mise"
 rm "$checkout/keep"
 rmdir "$checkout"
 mv "$test_root/saved-checkout" "$checkout"
-if AGENTBOX_TEST_DOWNLOAD_FAIL=1 run_guest >"$test_root/output" 2>&1; then exit 1; fi
+if (AGENTBOX_TEST_DOWNLOAD_FAIL=1 run_guest) >"$test_root/output" 2>&1; then exit 1; fi
 test ! -s "$AGENTBOX_TEST_LOG"
+run_guest
+test "$(tail -n 1 "$AGENTBOX_TEST_LOG")" = 'updated published application'
+test -z "$(git -C "$checkout" status --porcelain)"
 
 printf 'agentbox guest checkout and key tests passed\n'

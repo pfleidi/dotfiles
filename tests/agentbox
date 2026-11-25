@@ -220,6 +220,15 @@ for failure in restart readiness verification; do
   fi
   grep -Fq "$failure" "$test_root/output"
   test "$(grep -c '^orb restart workbox$' "$AGENTBOX_LIFECYCLE_LOG")" = 1
+  case $failure in
+    restart)
+      if grep -q '^guest readiness$' "$AGENTBOX_LIFECYCLE_LOG"; then fail 'Readiness ran after restart failed.'; fi
+      ;;
+    readiness)
+      test "$(grep -c '^guest readiness$' "$AGENTBOX_LIFECYCLE_LOG")" = 12
+      if grep -q '^guest verification$' "$AGENTBOX_LIFECYCLE_LOG"; then fail 'Verification ran before readiness.'; fi
+      ;;
+  esac
 done
 test "$(grep -c '^guest verification$' "$AGENTBOX_LIFECYCLE_LOG")" = 1
 : >"$AGENTBOX_LIFECYCLE_LOG"
