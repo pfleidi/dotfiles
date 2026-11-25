@@ -11,7 +11,7 @@ printf 'mise %s\n' "$*" >>"$AGENTBOX_TEST_LOG"
 if [ "$*" = 'self-update --yes' ]; then
   grep -q '^mise trust ' "$AGENTBOX_TEST_LOG" || exit 1
 fi
-if [ "$1" = exec ]; then test "$PWD" = "$HOME" || exit 1; fi
+if [ "$1" = exec ]; then test "$(realpath "$PWD")" = "$(realpath "$HOME")" || exit 1; fi
 test "$*" != "${AGENTBOX_TEST_FAIL:-}"
 EOF
 cat >"$test_root/bin/sudo" <<'EOF'
