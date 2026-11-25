@@ -268,8 +268,8 @@ agentbox shell
 Creation provisions an isolated Ubuntu guest or reapplies the environment to
 an existing compatible guest. It starts stopped guests and verifies the result.
 The guest checks out this repository's published `master` branch at
-`~/dotfiles`. Create, update, and rebuild apply that checkout's environment;
-host branches and uncommitted files do not supply guest configuration.
+`~/dotfiles`. Create, update, and rebuild apply that checkout's environment.
+Package, tool, dotfile, and plugin declarations come from that published checkout.
 
 Agentbox registers its dedicated GitHub key through the stored GitHub CLI
 session and installs it in the guest at `~/.ssh/agentbox_ed25519`, mode `0600`.
