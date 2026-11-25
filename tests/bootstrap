@@ -1,0 +1,35 @@
+#!/bin/sh
+set -eu
+
+repo=$(dirname "$(dirname "$(realpath "$0")")")
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/bootstrap-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT HUP INT TERM
+export HOME="$test_root/home"
+export PATH="$test_root/bin:$PATH"
+mkdir -p "$HOME/coding/skills/.claude-plugin" "$HOME/coding/skills/config" \
+  "$HOME/coding/skills/skills/task-implement" "$test_root/bin"
+touch "$HOME/coding/skills/.claude-plugin/marketplace.json" \
+  "$HOME/coding/skills/config/global-agents.md" \
+  "$HOME/coding/skills/skills/task-implement/SKILL.md"
+cat >"$test_root/bin/claude" <<'EOF'
+#!/bin/sh
+if [ "$*" = 'plugin marketplace list --json' ]; then
+  printf '{"path": "%s/coding/skills"}\n' "$HOME"
+fi
+EOF
+printf '#!/bin/sh\nexit 0\n' >"$test_root/bin/herdr"
+chmod +x "$test_root/bin/claude" "$test_root/bin/herdr"
+
+"$repo/mise-tasks/bootstrap"
+"$repo/mise-tasks/bootstrap"
+for link in .codex/AGENTS.md .agents/AGENTS.md .claude/CLAUDE.md; do
+  test "$(readlink "$HOME/$link")" = "$HOME/coding/skills/config/global-agents.md"
+done
+rm "$HOME/.codex/AGENTS.md"
+printf 'local instructions\n' >"$HOME/.codex/AGENTS.md"
+if "$repo/mise-tasks/bootstrap" >"$test_root/output" 2>&1; then
+  printf 'Bootstrap replaced local instructions.\n' >&2
+  exit 1
+fi
+test "$(cat "$HOME/.codex/AGENTS.md")" = 'local instructions'
+printf 'bootstrap fresh-home and preservation tests passed\n'

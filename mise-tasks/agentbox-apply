@@ -1,0 +1,37 @@
+#!/bin/sh
+#MISE description="Apply the published agentbox guest environment"
+set -eu
+
+[ "$(uname -s)" = Linux ] || { printf 'Agentbox application requires Linux.\n' >&2; exit 1; }
+repo=$(dirname "$(dirname "$(realpath "$0")")")
+cd "$repo"
+export PATH="$HOME/.local/bin:$PATH"
+export MISE_AUTO_ENV=true
+export GIT_TERMINAL_PROMPT=0
+export GIT_SSH_COMMAND='ssh -F ~/.ssh/agentbox-github'
+phase='Ubuntu packages'
+report_failure() {
+  status=$?
+  if [ "$status" -ne 0 ]; then printf 'Agentbox failed during %s.\n' "$phase" >&2; fi
+}
+trap report_failure EXIT
+
+sudo -n apt-get update
+sudo -n env DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y
+
+phase='mise self-update'
+mise trust "$repo/mise.toml"
+mise trust "$repo/mise.linux.toml"
+mise self-update --yes
+
+phase='managed repositories'
+mise bootstrap repos update --yes
+phase='declared packages, dotfiles and tools'
+mise bootstrap --yes --skip task
+phase='global tool upgrades'
+mise upgrade --global --yes
+phase='agent integrations'
+mise run bootstrap
+phase='locked Neovim plugins'
+cd "$HOME"
+mise exec -- nvim --headless -u NONE -l "$repo/lib/agentbox/plugins.lua" "$repo"

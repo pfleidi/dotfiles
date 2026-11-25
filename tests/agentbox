@@ -14,6 +14,8 @@ machine_template=$repo/config/agentbox/workbox.json
 fake_bin=$test_root/fake-bin
 mkdir -p "$test_home" "$fake_bin"
 export AGENTBOX_TEST_LOG="$test_root/shell-arguments"
+export AGENTBOX_LIFECYCLE_LOG="$test_root/lifecycle"
+export AGENTBOX_TEST_PIDS="$test_root/probe-pids"
 
 fail() {
   printf '%s\n' "$1" >&2
@@ -100,20 +102,24 @@ printf 'Darwin\n'
 EOF
 fake_command orb <<'EOF'
 #!/bin/sh
+printf 'orb %s\n' "$*" >>"$AGENTBOX_LIFECYCLE_LOG"
 case $* in
   'list -q')
-    printf 'workbox\n'
+    if [ "${AGENTBOX_MISSING:-0}" = 0 ]; then printf 'workbox\n'; fi
     ;;
   'info workbox -f json')
     printf '%s\n' '{"record":{"image":{"distro":"ubuntu","version":"current","arch":"arm64"}}}'
     ;;
   'config get machine.workbox.isolated'|'config get machine.workbox.isolate_network')
-    printf 'true\n'
+    printf '%s\n' "${AGENTBOX_ISOLATED:-true}"
     ;;
   'config get machine.workbox.forward_ssh_agent'|'config get machines.expose_ports_to_lan')
     printf 'false\n'
     ;;
-  'config get machine.workbox.mounts'|'config set '*)
+  'config get machine.workbox.mounts'|'config set '*|'start workbox'|'create '*|'delete --force workbox')
+    ;;
+  'restart workbox')
+    exit "${AGENTBOX_RESTART_STATUS:-0}"
     ;;
   *)
     exit 1
@@ -141,6 +147,36 @@ EOF
 fake_command orbctl <<'EOF'
 #!/bin/sh
 printf '%s\n' "$@" >"$AGENTBOX_TEST_LOG"
+if [ "$6" = sh ]; then
+  case $8 in
+    *'mise run verify'*)
+      printf 'guest verification\n' >>"$AGENTBOX_LIFECYCLE_LOG"
+      exit "${AGENTBOX_VERIFY_STATUS:-0}"
+      ;;
+  esac
+  printf 'guest application\n' >>"$AGENTBOX_LIFECYCLE_LOG"
+  cat >/dev/null
+  exit "${AGENTBOX_APPLY_STATUS:-0}"
+fi
+EOF
+fake_command ssh <<'EOF'
+#!/bin/sh
+if [ "$1" = -F ]; then exec /usr/bin/ssh "$@"; fi
+printf 'guest readiness\n' >>"$AGENTBOX_LIFECYCLE_LOG"
+attempts=$(grep -c '^guest readiness$' "$AGENTBOX_LIFECYCLE_LOG")
+if [ "${AGENTBOX_READY_HANG:-0}" = 1 ] && [ "$attempts" = 1 ]; then
+  printf '%s\n' "$$" >>"$AGENTBOX_TEST_PIDS"
+  exec /bin/sleep 30
+fi
+test "$attempts" -gt "${AGENTBOX_READY_FAILURES:-0}"
+EOF
+fake_command sleep <<'EOF'
+#!/bin/sh
+if [ "$1" = 5 ]; then
+  printf '%s\n' "$$" >>"$AGENTBOX_TEST_PIDS"
+  exec /bin/sleep 5
+fi
+exit 0
 EOF
 
 key_path=$config_home/agentbox/keys/workbox/github_ed25519
@@ -148,6 +184,140 @@ mkdir -p "$(dirname "$key_path")"
 printf 'synthetic private key\n' >"$key_path"
 printf 'synthetic title\n' >"$key_path.title"
 run_agentbox_with_fakes create
+grep -Fqx 'guest application' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Create did not bootstrap the guest.'
+grep -Fqx 'orb start workbox' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Create did not start the existing guest.'
+
+: >"$AGENTBOX_LIFECYCLE_LOG"
+(AGENTBOX_MISSING=1 run_agentbox_with_fakes create)
+grep -Fq 'orb create --isolated --isolate-network' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Create did not preserve isolation.'
+grep -Fqx 'guest application' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Fresh create did not bootstrap.'
+: >"$AGENTBOX_LIFECYCLE_LOG"
+run_agentbox_with_fakes update
+grep -Fqx 'orb start workbox' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Update did not start the guest.'
+grep -Fqx 'guest application' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Update did not apply the environment.'
+grep -Fqx 'orb restart workbox' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Successful update did not restart the guest.'
+tail -n 3 "$AGENTBOX_LIFECYCLE_LOG" >"$test_root/completion"
+assert_file_content "$test_root/completion" 'Unexpected update completion order.' <<'EOF'
+orb restart workbox
+guest readiness
+guest verification
+EOF
+if (AGENTBOX_MISSING=1 run_agentbox_with_fakes update) >"$test_root/output" 2>&1; then
+  fail 'Update created a missing guest.'
+fi
+grep -Fq 'agentbox create' "$test_root/output"
+: >"$AGENTBOX_LIFECYCLE_LOG"
+if (AGENTBOX_ISOLATED=false run_agentbox_with_fakes update) >"$test_root/output" 2>&1; then
+  fail 'Update accepted a non-isolated guest.'
+fi
+if grep -Fqx 'guest application' "$AGENTBOX_LIFECYCLE_LOG"; then fail 'Unsafe guest was changed.'; fi
+if (AGENTBOX_APPLY_STATUS=1 run_agentbox_with_fakes update) >"$test_root/output" 2>&1; then
+  fail 'Update ignored application failure.'
+fi
+if grep -Fqx 'orb restart workbox' "$AGENTBOX_LIFECYCLE_LOG"; then fail 'Failed application restarted the guest.'; fi
+for failure in restart readiness verification; do
+  : >"$AGENTBOX_LIFECYCLE_LOG"
+  if (
+    case $failure in
+      restart) export AGENTBOX_RESTART_STATUS=1 ;;
+      readiness) export AGENTBOX_READY_FAILURES=99 ;;
+      verification) export AGENTBOX_VERIFY_STATUS=1 ;;
+    esac
+    run_agentbox_with_fakes update
+  ) >"$test_root/output" 2>&1; then
+    fail "Update ignored $failure failure."
+  fi
+  grep -Fq "$failure" "$test_root/output"
+  test "$(grep -c '^orb restart workbox$' "$AGENTBOX_LIFECYCLE_LOG")" = 1
+  case $failure in
+    restart)
+      if grep -q '^guest readiness$' "$AGENTBOX_LIFECYCLE_LOG"; then fail 'Readiness ran after restart failed.'; fi
+      ;;
+    readiness)
+      test "$(grep -c '^guest readiness$' "$AGENTBOX_LIFECYCLE_LOG")" = 12
+      if grep -q '^guest verification$' "$AGENTBOX_LIFECYCLE_LOG"; then fail 'Verification ran before readiness.'; fi
+      ;;
+  esac
+done
+test "$(grep -c '^guest verification$' "$AGENTBOX_LIFECYCLE_LOG")" = 1
+: >"$AGENTBOX_LIFECYCLE_LOG"
+(AGENTBOX_READY_FAILURES=2 run_agentbox_with_fakes update)
+test "$(grep -c '^guest readiness$' "$AGENTBOX_LIFECYCLE_LOG")" = 3
+
+PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home \
+  python3 - "$agentbox" <<'PY'
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
+
+for hang, failures, expected_status in (("1", "99", 1), ("0", "0", 0)):
+    Path(os.environ["AGENTBOX_LIFECYCLE_LOG"]).write_text("")
+    pids = Path(os.environ["AGENTBOX_TEST_PIDS"])
+    pids.write_text("")
+    env = dict(os.environ, AGENTBOX_READY_HANG=hang, AGENTBOX_READY_FAILURES=failures)
+    started = time.monotonic()
+    process = subprocess.Popen([sys.argv[1], "update"], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
+    try:
+        output, _ = process.communicate(timeout=12)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGKILL)
+        process.communicate()
+        raise AssertionError("The readiness probe exceeded its deadline")
+    assert process.returncode == expected_status, output.decode()
+    if hang == "1":
+        assert 4 <= time.monotonic() - started < 12
+        assert b"readiness check failed" in output, output.decode()
+    for pid in pids.read_text().splitlines():
+        try:
+            os.kill(int(pid), 0)
+        except ProcessLookupError:
+            continue
+        raise AssertionError("Probe or timer still running: " + pid)
+PY
+
+PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home \
+  python3 - "$agentbox" "$AGENTBOX_LIFECYCLE_LOG" <<'PY'
+import os
+import pathlib
+import pty
+import select
+import subprocess
+import sys
+import time
+
+for answer, expected_status in ((b"cancel\n", 1), (b"workbox\n", 0)):
+    log = pathlib.Path(sys.argv[2])
+    log.write_text("")
+    master, slave = pty.openpty()
+    process = subprocess.Popen([sys.argv[1], "rebuild"], stdin=slave, stdout=slave, stderr=slave)
+    os.close(slave)
+    os.write(master, answer)
+    output = b""
+    deadline = time.monotonic() + 10
+    while process.poll() is None and time.monotonic() < deadline:
+        if select.select([master], [], [], 0.1)[0]:
+            try:
+                output += os.read(master, 65536)
+            except OSError:
+                break
+    try:
+        status = process.wait(timeout=1)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+        raise AssertionError("Rebuild did not finish")
+    finally:
+        os.close(master)
+    assert status == expected_status, output.decode()
+    events = log.read_text()
+    if expected_status:
+        assert "orb delete" not in events, events
+    else:
+        assert events.index("orb delete --force workbox") < events.index("orb create ") < events.index("guest application"), events
+PY
 
 combined_ssh_config=$test_root/combined-ssh-config
 cat "$test_home/.ssh/config.d/agentbox" >"$combined_ssh_config"

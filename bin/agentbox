@@ -20,6 +20,7 @@ usage() {
   cat >&2 <<'EOF'
 Usage:
   agentbox create
+  agentbox update
   agentbox key
   agentbox sync-repos DIRECTORY
   agentbox shell [COMMAND...]
@@ -366,6 +367,60 @@ provision_machine() {
     "$machine"
 }
 
+apply_guest_environment() {
+  orb start "$machine" || fail 'Could not start workbox for environment application.'
+  orbctl run --machine "$machine" /usr/bin/env -- sh -c "$(cat "$repo/lib/agentbox/bootstrap")" <"$private_key" || fail 'The workbox environment application failed; preserve the guest and resolve the reported phase.'
+}
+
+verify_guest_environment() {
+  # shellcheck disable=SC2016
+  orbctl run --machine "$machine" /usr/bin/env -- sh -c '
+    set -eu
+    export PATH="$HOME/.local/bin:$PATH"
+    cd "$HOME/dotfiles"
+    mise run verify
+    changes=$(git status --porcelain --untracked-files=all)
+    test -z "$changes"
+  ' || fail 'The workbox environment verification failed.'
+}
+
+check_guest_readiness() (
+  ssh -o BatchMode=yes -o ConnectTimeout=5 -o ConnectionAttempts=1 "$machine" true &
+  probe=$!
+  (
+    sleep 5 &
+    delay=$!
+    trap 'kill "$delay" 2>/dev/null || :; wait "$delay" 2>/dev/null || :; exit 0' HUP INT TERM
+    wait "$delay" && kill -KILL "$probe" 2>/dev/null
+  ) &
+  timer=$!
+  # shellcheck disable=SC2329
+  cleanup_probe() {
+    if [ -n "$probe" ]; then
+      kill -KILL "$probe" 2>/dev/null || :
+      wait "$probe" 2>/dev/null || :
+    fi
+    kill "$timer" 2>/dev/null || :
+    wait "$timer" 2>/dev/null || :
+  }
+  trap cleanup_probe EXIT
+  trap 'exit 1' HUP INT TERM
+  status=0
+  wait "$probe" || status=$?
+  probe=
+  exit "$status"
+)
+
+restart_updated_guest() {
+  orb restart "$machine" || fail 'The workbox restart failed.'
+  attempt=0
+  until check_guest_readiness; do
+    attempt=$((attempt + 1))
+    [ "$attempt" -lt 12 ] || fail 'The workbox readiness check failed after restart.'
+    sleep 2
+  done
+}
+
 create_machine() {
   load_machine_template
   validate_manifest
@@ -378,6 +433,19 @@ create_machine() {
     prepare_host_access
     provision_machine
   fi
+  apply_guest_environment
+  verify_guest_environment
+}
+
+update_machine() {
+  load_machine_template
+  require_orb
+  machine_exists || fail 'The workbox machine does not exist; run agentbox create.'
+  validate_machine
+  prepare_host_access
+  apply_guest_environment
+  restart_updated_guest
+  verify_guest_environment
 }
 
 rebuild_machine() {
@@ -395,6 +463,8 @@ rebuild_machine() {
 
   orb delete --force "$machine"
   provision_machine
+  apply_guest_environment
+  verify_guest_environment
 }
 
 [ "$#" -gt 0 ] || usage
@@ -411,6 +481,9 @@ esac
 case $command in
   create)
     create_machine
+    ;;
+  update)
+    update_machine
     ;;
   key)
     manage_key

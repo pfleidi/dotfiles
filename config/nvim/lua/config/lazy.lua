@@ -14,12 +14,21 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+local spec = {
+  { "LazyVim/LazyVim", import = "lazyvim.plugins" },
+  { import = "lazyvim.plugins.extras.lang.go" },
+  { import = "plugins" },
+}
+if vim.g.agentbox_lockfile then
+  local lock = vim.json.decode(table.concat(vim.fn.readfile(vim.g.agentbox_lockfile), "\n"))
+  for name, entry in pairs(lock) do
+    table.insert(spec, { name, optional = true, commit = entry.commit, branch = entry.branch })
+  end
+end
+
 require("lazy").setup({
-  spec = {
-    { "LazyVim/LazyVim", import = "lazyvim.plugins" },
-    { import = "lazyvim.plugins.extras.lang.go" },
-    { import = "plugins" },
-  },
+  lockfile = vim.g.agentbox_lockfile,
+  spec = spec,
   defaults = {
     lazy = false,
     version = false,

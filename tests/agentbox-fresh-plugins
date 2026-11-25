@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import json
+import os
+import shutil
+import signal
+import subprocess
+import sys
+import tempfile
+
+repo = Path(__file__).resolve().parent.parent
+cache = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "nvim/lazy"
+original = (repo / "config/nvim/lazy-lock.json").read_bytes()
+lock = json.loads(original)
+
+with tempfile.TemporaryDirectory(prefix="agentbox-fresh-plugins-") as directory:
+    root = Path(directory)
+    home = root / "home"
+    home.mkdir()
+    fixture = home / "dotfiles"
+    shutil.copytree(repo / "config/nvim", fixture / "config/nvim")
+    (home / ".config").mkdir()
+    (home / ".config/nvim").symlink_to(fixture / "config/nvim")
+    # Exercise real module loading without downloading tools or compiling parsers.
+    (fixture / "config/nvim/lua/plugins/offline.lua").write_text('''
+return {
+  {
+    "mason-org/mason.nvim",
+    build = function()
+      assert(require("mason").setup)
+      vim.fn.writefile({ "mason" }, vim.env.AGENTBOX_TEST_BUILD_LOG, "a")
+    end,
+    opts = function(_, opts) opts.ensure_installed = {}; opts.registries = {} end,
+  },
+  {
+    "nvim-treesitter/nvim-treesitter",
+    build = function()
+      assert(require("nvim-treesitter").setup)
+      vim.fn.writefile({ "treesitter" }, vim.env.AGENTBOX_TEST_BUILD_LOG, "a")
+    end,
+    opts = function(_, opts) opts.ensure_installed = {} end,
+  },
+  {
+    "neovim/nvim-lspconfig",
+    opts = function(_, opts)
+      for _, server in pairs(opts.servers) do server.mason = false end
+    end,
+  },
+}
+''')
+    env = {
+        "HOME": str(home), "PATH": os.environ["PATH"],
+        "GIT_CONFIG_GLOBAL": str(root / "gitconfig"), "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_ALLOW_PROTOCOL": "file", "GIT_TERMINAL_PROMPT": "0",
+        "XDG_CONFIG_HOME": str(home / ".config"), "XDG_DATA_HOME": str(home / ".local/share"),
+        "XDG_STATE_HOME": str(home / ".local/state"), "XDG_CACHE_HOME": str(home / ".cache"),
+        "NVIM_LOG_FILE": str(root / "nvim.log"), "AGENTBOX_TEST_BUILD_LOG": str(root / "builds"),
+    }
+
+    def git(*args):
+        return subprocess.check_output(["git", *args], env=env, text=True, stderr=subprocess.STDOUT).strip()
+
+    for name, entry in lock.items():
+        source = cache / name
+        git("-C", str(source), "cat-file", "-e", entry["commit"] + "^{commit}")
+        url = git("-C", str(source), "config", "--get", "remote.origin.url")
+        assert url.startswith("https://github.com/"), name
+        remote = root / "remotes" / name
+        git("clone", "-q", "--bare", str(source), str(remote))
+        git("--git-dir=" + str(remote), "update-ref", "refs/heads/" + entry["branch"], entry["commit"])
+        git("config", "--global", "url." + str(remote) + ".insteadOf", url)
+
+    command = ["nvim", "--headless", "-u", "NONE", "-l", str(repo / "lib/agentbox/plugins.lua"), str(fixture)]
+    for _ in range(2):
+        with (root / "output").open("w") as output:
+            process = subprocess.Popen(command, cwd=home, env=env, stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
+            try:
+                status = process.wait(timeout=45)
+            except subprocess.TimeoutExpired:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait()
+                raise AssertionError("Fresh plugin application timed out")
+        output = (root / "output").read_text()
+        assert status == 0, "\n".join(output.splitlines()[-40:])
+        assert "Failed to run" not in output and "not found:" not in output, output
+        assert (fixture / "config/nvim/lazy-lock.json").read_bytes() == original
+        for name, entry in lock.items():
+            assert git("-C", str(home / ".local/share/nvim/lazy" / name), "rev-parse", "HEAD") == entry["commit"], name
+    assert set((root / "builds").read_text().splitlines()) == {"mason", "treesitter"}
+
+print("agentbox real LazyVim fresh-home tests passed")

@@ -1,0 +1,103 @@
+#!/bin/sh
+set -eu
+umask 077
+
+checkout=$HOME/dotfiles
+origin=https://github.com/pfleidi/dotfiles.git
+phase='checkout inspection'
+scratch=$(mktemp -d)
+finish() {
+  status=$?
+  rm -rf "$scratch"
+  if [ "$status" -ne 0 ]; then printf 'Agentbox failed during %s.\n' "$phase" >&2; fi
+}
+trap finish EXIT
+
+fail() {
+  printf '%s\n' "$1" >&2
+  exit 1
+}
+
+if [ -e "$checkout" ] || [ -L "$checkout" ]; then
+  [ ! -L "$checkout" ] && [ -d "$checkout/.git" ] || fail 'The dotfiles destination is not an independent checkout.'
+  [ "$(git -C "$checkout" rev-parse --show-toplevel)" = "$(realpath "$checkout")" ] || fail 'The dotfiles destination is not a checkout root.'
+  [ "$(git -C "$checkout" config --get-all remote.origin.url)" = "$origin" ] || fail 'The dotfiles origin does not match the published repository.'
+  [ "$(git -C "$checkout" symbolic-ref --short HEAD)" = master ] || fail 'The dotfiles checkout must use the master branch.'
+  changes=$(git -C "$checkout" status --porcelain --untracked-files=all --ignore-submodules=none)
+  [ -z "$changes" ] || fail 'The dotfiles checkout has local changes; preserve and resolve them before updating.'
+fi
+
+phase='dedicated GitHub access'
+ssh_dir=$HOME/.ssh
+[ ! -L "$ssh_dir" ] || fail 'Refusing a symlinked SSH directory.'
+mkdir -p "$ssh_dir"
+chmod 700 "$ssh_dir"
+
+install_owned_file() {
+  destination=$1
+  cat >"$scratch/file"
+  [ ! -L "$destination" ] || fail "Refusing a symlinked destination: $destination"
+  if [ -e "$destination" ]; then
+    if [ ! -f "$destination" ] || ! cmp -s "$scratch/file" "$destination"; then
+      fail "Refusing a conflicting destination: $destination"
+    fi
+  else
+    cp "$scratch/file" "$destination"
+  fi
+  chmod 600 "$destination"
+}
+
+install_owned_file "$ssh_dir/agentbox_ed25519"
+[ -s "$ssh_dir/agentbox_ed25519" ] || fail 'The dedicated GitHub key is empty.'
+install_owned_file "$ssh_dir/agentbox_known_hosts" <<'EOF'
+github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+EOF
+install_owned_file "$ssh_dir/agentbox-github" <<'EOF'
+Host github.com
+    User git
+    IdentityFile ~/.ssh/agentbox_ed25519
+    IdentityAgent none
+    IdentitiesOnly yes
+    ForwardAgent no
+    BatchMode yes
+    StrictHostKeyChecking yes
+    UserKnownHostsFile ~/.ssh/agentbox_known_hosts
+EOF
+config=$ssh_dir/config
+[ ! -L "$config" ] || fail 'Refusing a symlinked SSH config.'
+if [ -e "$config" ] && [ ! -f "$config" ]; then
+  fail 'Refusing a non-file SSH config.'
+fi
+include='Include ~/.ssh/agentbox-github'
+if [ ! -f "$config" ] || ! grep -Fxq "$include" "$config"; then
+  printf '%s\n' "$include" >"$scratch/config"
+  if [ -f "$config" ]; then cat "$config" >>"$scratch/config"; fi
+  cp "$scratch/config" "$config"
+fi
+chmod 600 "$config"
+export GIT_SSH_COMMAND='ssh -F ~/.ssh/agentbox-github'
+export GIT_TERMINAL_PROMPT=0
+
+phase='published checkout fetch'
+if [ -d "$checkout" ]; then
+  git -C "$checkout" fetch --no-tags origin refs/heads/master
+  published=$(git -C "$checkout" rev-parse FETCH_HEAD)
+  git -C "$checkout" merge-base --is-ancestor HEAD "$published" || fail 'The dotfiles checkout has unpublished commits; preserve and resolve them before updating.'
+  git -C "$checkout" merge --ff-only "$published"
+else
+  phase='clone prerequisites'
+  sudo -n apt-get update
+  sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates openssh-client
+  phase='published checkout clone'
+  git clone --branch master --single-branch "$origin" "$checkout"
+fi
+
+phase='mise installation'
+export PATH="$HOME/.local/bin:$PATH"
+if [ ! -x "$HOME/.local/bin/mise" ]; then
+  curl --fail --silent --show-error --location https://mise.run -o "$scratch/install-mise"
+  MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh "$scratch/install-mise"
+fi
+
+phase='published environment application'
+sh "$checkout/mise-tasks/agentbox-apply"
