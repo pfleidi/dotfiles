@@ -255,6 +255,90 @@ reapplies its resource limits to an existing isolated machine without deleting
 guest data. A distribution without a version, such as `ubuntu`, follows
 OrbStack's current default release.
 
+## Agentbox setup and maintenance
+
+Agentbox runs on macOS with OrbStack initialized and `gh` authenticated through
+its stored session. Generate the repository manifest above, then run:
+
+```sh
+agentbox create
+agentbox shell
+```
+
+Creation provisions an isolated Ubuntu guest or reapplies the environment to
+an existing compatible guest. It starts stopped guests and verifies the result.
+The guest checks out this repository's published `master` branch at
+`~/dotfiles`. Create, update, and rebuild apply that checkout's environment;
+host branches and uncommitted files do not supply guest configuration.
+
+Agentbox registers its dedicated GitHub key through the stored GitHub CLI
+session and installs it in the guest at `~/.ssh/agentbox_ed25519`, mode `0600`.
+Guest Git operations use that key with noninteractive authentication and pinned
+GitHub host trust. Existing unrelated SSH configuration is retained; conflicting
+managed files stop setup. Host mounts, SSH-agent forwarding, guest access to
+the host network, and LAN port exposure remain disabled. The private repository
+manifest remains host-local; maintenance does not update arbitrary project
+checkouts. Run `claude` and `codex` interactively inside the guest for their
+separate login flows when needed.
+
+Run maintenance explicitly from macOS:
+
+```sh
+agentbox update
+```
+
+Update requires an existing guest and starts it if stopped. It first checks the
+dotfiles origin, `master` branch, tracked edits, untracked files, and unpublished
+commits. Only a clean checkout that can fast-forward to published `master`
+proceeds to upgrades. Local changes and commits remain available for manual
+resolution; agentbox does not stash, reset, clean, or commit them.
+
+The shared application routine upgrades all installed Ubuntu packages within
+the current release, updates mise itself, reapplies declared packages and
+dotfiles, updates managed bootstrap repositories, and upgrades globally declared
+tools within their configured ranges. Exact tool pins remain pinned. Agent
+integrations are refreshed. Neovim installs and restores published locked plugin
+commits, checks the installed revisions, and leaves the tracked lockfile intact.
+The host's `mise run update` retains its separate plugin-update behavior.
+
+Every successful update restarts `workbox`, retries SSH readiness up to twelve
+times with a five-second connection timeout and two seconds between attempts,
+then runs `mise run verify` and checks checkout cleanliness. It leaves the guest
+running. Package service restarts and the final guest restart can interrupt
+active sessions, so finish guest work before invoking maintenance. Updates are
+manual; agentbox installs no scheduled maintenance job.
+
+On failure, the command reports the failed phase and preserves the guest for
+repair. Package operations are not transactional. Resolve the reported problem
+and rerun `agentbox update`; failed application does not trigger the success-path
+restart. A readiness or verification failure after restart also returns failure.
+
+`agentbox rebuild` requires an interactive terminal and confirmation by typing
+`workbox`. It permanently deletes all guest state, recreates the machine, and
+repeats bootstrap and verification. Copy out work you need before rebuilding.
+
+## Agentbox checks
+
+Run the isolated suites from this repository using installed binaries on PATH:
+
+```sh
+tests/bootstrap
+tests/agentbox
+tests/agentbox-guest
+tests/agentbox-apply
+tests/agentbox-plugins
+mise tasks validate --errors-only
+git diff --check
+```
+
+The plugin suite uses real Neovim and a local Lazy checkout containing the
+published manager revision. It defaults to Neovim's installed `lazy.nvim`;
+pass another checkout as its first argument. Plugin repositories and Git
+histories are temporary local fixtures. These suites do not maintain real
+guests or use real credentials. `mise run verify` additionally requires the
+machine's managed links, repositories, tools, plugins, and integrations to
+match this checkout.
+
 ## Rollback
 
 Changes are kept in focused Git commits. Revert the unwanted commit, inspect the new plan, and reapply the declared state:
