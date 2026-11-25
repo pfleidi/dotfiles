@@ -85,4 +85,15 @@ for invalid in missing unusable; do
   fi
   cmp "$lockfile" "$test_root/invalid.before"
 done
+jq 'del(.fixture)' "$test_root/lock.before" >"$lockfile"
+rm -rf "$plugin_dir"
+if run_plugins >"$test_root/output" 2>&1; then
+  printf 'Installed a fresh plugin without a lock entry.\n' >&2
+  exit 1
+fi
+if [ -e "$plugin_dir" ]; then
+  tail -n 15 "$test_root/output"
+  printf 'Cloned a plugin after lock validation failed.\n' >&2
+  exit 1
+fi
 printf 'agentbox real Lazy locked-plugin tests passed\n'

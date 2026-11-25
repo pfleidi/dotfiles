@@ -33,7 +33,7 @@ require("lazy").setup({
     lazy = false,
     version = false,
   },
-  install = { missing = vim.g.agentbox_lockfile == nil, colorscheme = { "tokyonight", "habamax" } },
+  install = { colorscheme = { "tokyonight", "habamax" } },
   performance = {
     rtp = {
       disabled_plugins = {

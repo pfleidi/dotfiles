@@ -2,6 +2,12 @@ local repo = assert(arg[1], "dotfiles checkout is required")
 local lockfile = repo .. "/config/nvim/lazy-lock.json"
 local temporary_lock = vim.fn.tempname()
 
+local function fail(err)
+  vim.fn.delete(temporary_lock)
+  io.stderr:write(err .. "\n")
+  vim.cmd("cquit 1")
+end
+
 local function read(path)
   local file = assert(io.open(path, "rb"))
   local contents = file:read("*a")
@@ -48,20 +54,31 @@ local function apply()
 
   vim.opt.rtp:prepend(repo .. "/config/nvim")
   vim.go.loadplugins = true
+  local function prepare_plugins()
+    for name in pairs(require("lazy.core.config").plugins) do
+      assert(lock[name], "Missing lock entry for " .. name)
+    end
+    write_lock()
+    require("lazy.manage.lock").lock = vim.deepcopy(lock)
+  end
+  vim.api.nvim_create_autocmd("User", {
+    pattern = "LazyInstallPre",
+    callback = function()
+      local ok, err = pcall(prepare_plugins)
+      if not ok then
+        fail(err)
+      end
+    end,
+  })
   require("config.lazy")
   local config = require("lazy.core.config")
-  for name in pairs(config.plugins) do
-    assert(lock[name], "Missing lock entry for " .. name)
-  end
   local function check_errors()
     for name, plugin in pairs(config.plugins) do
       assert(not require("lazy.core.plugin").has_errors(plugin), "Plugin operation failed: " .. name)
     end
   end
-  require("lazy").install({ wait = true, lockfile = true, show = false })
   check_errors()
-  write_lock()
-  require("lazy.manage.lock").lock = vim.deepcopy(lock)
+  prepare_plugins()
   require("lazy").restore({ wait = true, show = false })
   check_errors()
   for name, entry in pairs(lock) do
@@ -72,9 +89,8 @@ local function apply()
 end
 
 local ok, err = xpcall(apply, debug.traceback)
-vim.fn.delete(temporary_lock)
 if not ok then
-  io.stderr:write(err .. "\n")
-  vim.cmd("cquit 1")
+  fail(err)
 end
+vim.fn.delete(temporary_lock)
 vim.cmd("qa!")

@@ -327,6 +327,7 @@ tests/agentbox
 tests/agentbox-guest
 tests/agentbox-apply
 tests/agentbox-plugins
+tests/agentbox-fresh-plugins
 mise tasks validate --errors-only
 git diff --check
 ```
@@ -334,7 +335,10 @@ git diff --check
 The plugin suite uses real Neovim and a local Lazy checkout containing the
 published manager revision. It defaults to Neovim's installed `lazy.nvim`;
 pass another checkout as its first argument. Plugin repositories and Git
-histories are temporary local fixtures. These suites do not maintain real
+histories are temporary local fixtures. The fresh-home suite additionally uses
+the complete installed plugin cache, or a cache directory supplied as its first
+argument. It exercises real LazyVim initialization, substituting module-loading
+checks for tool downloads and parser builds. These suites do not maintain real
 guests or use real credentials. `mise run verify` additionally requires the
 machine's managed links, repositories, tools, plugins, and integrations to
 match this checkout.
