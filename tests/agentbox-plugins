@@ -63,6 +63,15 @@ run_plugins >"$test_root/output" 2>&1 || { cat "$test_root/output"; exit 1; }
 test "$(git -C "$plugin_dir" rev-parse HEAD)" = "$plugin_commit"
 cmp "$lockfile" "$test_root/lock.before"
 
+new_commit=$(git -C "$test_root/plugin" rev-parse HEAD)
+for target in "$new_commit" "$plugin_commit"; do
+  jq --arg commit "$target" '.fixture.commit = $commit' "$test_root/lock.before" >"$lockfile"
+  cp "$lockfile" "$test_root/update.before"
+  run_plugins >"$test_root/output" 2>&1 || { tail -n 12 "$test_root/output"; exit 1; }
+  test "$(git -C "$plugin_dir" rev-parse HEAD)" = "$target"
+  cmp "$lockfile" "$test_root/update.before"
+done
+
 for invalid in missing unusable; do
   if [ "$invalid" = missing ]; then
     jq 'del(.fixture)' "$test_root/lock.before" >"$lockfile"

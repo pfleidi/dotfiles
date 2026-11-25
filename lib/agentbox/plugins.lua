@@ -23,9 +23,12 @@ local function apply()
       "Invalid locked commit for " .. name)
     assert(type(entry.branch) == "string" and entry.branch ~= "", "Missing locked branch for " .. name)
   end
-  local file = assert(io.open(temporary_lock, "wb"))
-  file:write(original)
-  file:close()
+  local function write_lock()
+    local file = assert(io.open(temporary_lock, "wb"))
+    file:write(original)
+    file:close()
+  end
+  write_lock()
   vim.g.agentbox_lockfile = temporary_lock
   local root = vim.fn.stdpath("data") .. "/lazy"
 
@@ -57,6 +60,8 @@ local function apply()
   end
   require("lazy").install({ wait = true, lockfile = true, show = false })
   check_errors()
+  write_lock()
+  require("lazy.manage.lock").lock = vim.deepcopy(lock)
   require("lazy").restore({ wait = true, show = false })
   check_errors()
   for name, entry in pairs(lock) do
