@@ -384,10 +384,37 @@ verify_guest_environment() {
   ' || fail 'The workbox environment verification failed.'
 }
 
+check_guest_readiness() (
+  ssh -o BatchMode=yes -o ConnectTimeout=5 -o ConnectionAttempts=1 "$machine" true &
+  probe=$!
+  (
+    sleep 5 &
+    delay=$!
+    trap 'kill "$delay" 2>/dev/null || :; wait "$delay" 2>/dev/null || :; exit 0' HUP INT TERM
+    wait "$delay" && kill -KILL "$probe" 2>/dev/null
+  ) &
+  timer=$!
+  # shellcheck disable=SC2329
+  cleanup_probe() {
+    if [ -n "$probe" ]; then
+      kill -KILL "$probe" 2>/dev/null || :
+      wait "$probe" 2>/dev/null || :
+    fi
+    kill "$timer" 2>/dev/null || :
+    wait "$timer" 2>/dev/null || :
+  }
+  trap cleanup_probe EXIT
+  trap 'exit 1' HUP INT TERM
+  status=0
+  wait "$probe" || status=$?
+  probe=
+  exit "$status"
+)
+
 restart_updated_guest() {
   orb restart "$machine" || fail 'The workbox restart failed.'
   attempt=0
-  until ssh -o BatchMode=yes -o ConnectTimeout=5 -o ConnectionAttempts=1 "$machine" true; do
+  until check_guest_readiness; do
     attempt=$((attempt + 1))
     [ "$attempt" -lt 12 ] || fail 'The workbox readiness check failed after restart.'
     sleep 2

@@ -302,7 +302,7 @@ commits, checks the installed revisions, and leaves the tracked lockfile intact.
 The host's `mise run update` retains its separate plugin-update behavior.
 
 Every successful update restarts `workbox`, retries SSH readiness up to twelve
-times with a five-second connection timeout and two seconds between attempts,
+times with a five-second deadline per probe and two seconds between attempts,
 then runs `mise run verify` and checks checkout cleanliness. It leaves the guest
 running. Package service restarts and the final guest restart can interrupt
 active sessions, so finish guest work before invoking maintenance. Updates are
