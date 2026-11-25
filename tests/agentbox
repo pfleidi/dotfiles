@@ -117,6 +117,9 @@ case $* in
     ;;
   'config get machine.workbox.mounts'|'config set '*|'start workbox'|'create '*|'delete --force workbox')
     ;;
+  'restart workbox')
+    exit "${AGENTBOX_RESTART_STATUS:-0}"
+    ;;
   *)
     exit 1
     ;;
@@ -144,10 +147,27 @@ fake_command orbctl <<'EOF'
 #!/bin/sh
 printf '%s\n' "$@" >"$AGENTBOX_TEST_LOG"
 if [ "$6" = sh ]; then
+  case $8 in
+    *'mise run verify'*)
+      printf 'guest verification\n' >>"$AGENTBOX_LIFECYCLE_LOG"
+      exit "${AGENTBOX_VERIFY_STATUS:-0}"
+      ;;
+  esac
   printf 'guest application\n' >>"$AGENTBOX_LIFECYCLE_LOG"
   cat >/dev/null
   exit "${AGENTBOX_APPLY_STATUS:-0}"
 fi
+EOF
+fake_command ssh <<'EOF'
+#!/bin/sh
+if [ "$1" = -F ]; then exec /usr/bin/ssh "$@"; fi
+printf 'guest readiness\n' >>"$AGENTBOX_LIFECYCLE_LOG"
+attempts=$(grep -c '^guest readiness$' "$AGENTBOX_LIFECYCLE_LOG")
+test "$attempts" -gt "${AGENTBOX_READY_FAILURES:-0}"
+EOF
+fake_command sleep <<'EOF'
+#!/bin/sh
+exit 0
 EOF
 
 key_path=$config_home/agentbox/keys/workbox/github_ed25519
@@ -166,6 +186,13 @@ grep -Fqx 'guest application' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Fresh create di
 run_agentbox_with_fakes update
 grep -Fqx 'orb start workbox' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Update did not start the guest.'
 grep -Fqx 'guest application' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Update did not apply the environment.'
+grep -Fqx 'orb restart workbox' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Successful update did not restart the guest.'
+tail -n 3 "$AGENTBOX_LIFECYCLE_LOG" >"$test_root/completion"
+assert_file_content "$test_root/completion" 'Unexpected update completion order.' <<'EOF'
+orb restart workbox
+guest readiness
+guest verification
+EOF
 if (AGENTBOX_MISSING=1 run_agentbox_with_fakes update) >"$test_root/output" 2>&1; then
   fail 'Update created a missing guest.'
 fi
@@ -178,6 +205,26 @@ if grep -Fqx 'guest application' "$AGENTBOX_LIFECYCLE_LOG"; then fail 'Unsafe gu
 if (AGENTBOX_APPLY_STATUS=1 run_agentbox_with_fakes update) >"$test_root/output" 2>&1; then
   fail 'Update ignored application failure.'
 fi
+if grep -Fqx 'orb restart workbox' "$AGENTBOX_LIFECYCLE_LOG"; then fail 'Failed application restarted the guest.'; fi
+for failure in restart readiness verification; do
+  : >"$AGENTBOX_LIFECYCLE_LOG"
+  if (
+    case $failure in
+      restart) export AGENTBOX_RESTART_STATUS=1 ;;
+      readiness) export AGENTBOX_READY_FAILURES=99 ;;
+      verification) export AGENTBOX_VERIFY_STATUS=1 ;;
+    esac
+    run_agentbox_with_fakes update
+  ) >"$test_root/output" 2>&1; then
+    fail "Update ignored $failure failure."
+  fi
+  grep -Fq "$failure" "$test_root/output"
+  test "$(grep -c '^orb restart workbox$' "$AGENTBOX_LIFECYCLE_LOG")" = 1
+done
+test "$(grep -c '^guest verification$' "$AGENTBOX_LIFECYCLE_LOG")" = 1
+: >"$AGENTBOX_LIFECYCLE_LOG"
+(AGENTBOX_READY_FAILURES=2 run_agentbox_with_fakes update)
+test "$(grep -c '^guest readiness$' "$AGENTBOX_LIFECYCLE_LOG")" = 3
 
 PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home \
   python3 - "$agentbox" "$AGENTBOX_LIFECYCLE_LOG" <<'PY'

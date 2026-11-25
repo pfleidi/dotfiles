@@ -372,6 +372,28 @@ apply_guest_environment() {
   orbctl run --machine "$machine" /usr/bin/env -- sh -c "$(cat "$repo/lib/agentbox/bootstrap")" <"$private_key" || fail 'The workbox environment application failed; preserve the guest and resolve the reported phase.'
 }
 
+verify_guest_environment() {
+  # shellcheck disable=SC2016
+  orbctl run --machine "$machine" /usr/bin/env -- sh -c '
+    set -eu
+    export PATH="$HOME/.local/bin:$PATH"
+    cd "$HOME/dotfiles"
+    mise run verify
+    changes=$(git status --porcelain --untracked-files=all)
+    test -z "$changes"
+  ' || fail 'The workbox environment verification failed.'
+}
+
+restart_updated_guest() {
+  orb restart "$machine" || fail 'The workbox restart failed.'
+  attempt=0
+  until ssh -o BatchMode=yes -o ConnectTimeout=5 -o ConnectionAttempts=1 "$machine" true; do
+    attempt=$((attempt + 1))
+    [ "$attempt" -lt 12 ] || fail 'The workbox readiness check failed after restart.'
+    sleep 2
+  done
+}
+
 create_machine() {
   load_machine_template
   validate_manifest
@@ -385,6 +407,7 @@ create_machine() {
     provision_machine
   fi
   apply_guest_environment
+  verify_guest_environment
 }
 
 update_machine() {
@@ -394,6 +417,8 @@ update_machine() {
   validate_machine
   prepare_host_access
   apply_guest_environment
+  restart_updated_guest
+  verify_guest_environment
 }
 
 rebuild_machine() {
@@ -412,6 +437,7 @@ rebuild_machine() {
   orb delete --force "$machine"
   provision_machine
   apply_guest_environment
+  verify_guest_environment
 }
 
 [ "$#" -gt 0 ] || usage
