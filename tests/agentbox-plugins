@@ -1,0 +1,79 @@
+#!/bin/sh
+set -eu
+repo=$(dirname "$(dirname "$(realpath "$0")")")
+lazy_source=${1:-${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy/lazy.nvim}
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/agentbox-plugins-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT HUP INT TERM
+export GIT_CONFIG_GLOBAL="$test_root/gitconfig"
+export GIT_CONFIG_NOSYSTEM=1
+git config --global user.name 'Test Author'
+git config --global user.email 'author@example.invalid'
+git config --global commit.gpgsign false
+lazy_commit=$(jq -r '."lazy.nvim".commit' "$repo/config/nvim/lazy-lock.json")
+git -C "$lazy_source" cat-file -e "$lazy_commit^{commit}"
+git clone -q --bare "$lazy_source" "$test_root/lazy.nvim"
+git --git-dir="$test_root/lazy.nvim" update-ref refs/heads/main "$lazy_commit"
+git config --global url."$test_root/lazy.nvim".insteadOf https://github.com/folke/lazy.nvim.git
+git config --global advice.detachedHead false
+
+fixture=$test_root/dotfiles
+mkdir -p "$fixture/config/nvim/lua/config" "$fixture/config/nvim/lua/plugins" \
+  "$test_root/LazyVim/lua/lazyvim/plugins/extras/lang" "$test_root/home"
+cp "$repo/config/nvim/lua/config/lazy.lua" "$fixture/config/nvim/lua/config/lazy.lua"
+mkdir -p "$test_root/home/.config"
+ln -s "$fixture/config/nvim" "$test_root/home/.config/nvim"
+printf 'return {}\n' >"$fixture/config/nvim/lua/plugins/init.lua"
+printf 'return {{ "https://example.invalid/fixture.git", name = "fixture", lazy = true }}\n' >"$test_root/LazyVim/lua/lazyvim/plugins/init.lua"
+printf 'return {}\n' >"$test_root/LazyVim/lua/lazyvim/plugins/extras/lang/go.lua"
+git init -qb main "$test_root/LazyVim"
+git -C "$test_root/LazyVim" add .
+git -C "$test_root/LazyVim" commit -qm initial
+lazyvim_commit=$(git -C "$test_root/LazyVim" rev-parse HEAD)
+git config --global url."$test_root/LazyVim".insteadOf https://github.com/LazyVim/LazyVim.git
+git init -qb main "$test_root/plugin"
+printf 'locked version\n' >"$test_root/plugin/version"
+git -C "$test_root/plugin" add .
+git -C "$test_root/plugin" commit -qm locked
+plugin_commit=$(git -C "$test_root/plugin" rev-parse HEAD)
+printf 'newer version\n' >"$test_root/plugin/version"
+git -C "$test_root/plugin" commit -qam newer
+git config --global url."$test_root/plugin".insteadOf https://example.invalid/fixture.git
+lockfile=$fixture/config/nvim/lazy-lock.json
+cat >"$lockfile" <<EOF
+{
+  "LazyVim": { "branch": "main", "commit": "$lazyvim_commit" },
+  "fixture": { "branch": "main", "commit": "$plugin_commit" },
+  "lazy.nvim": { "branch": "main", "commit": "$lazy_commit" }
+}
+EOF
+cp "$lockfile" "$test_root/lock.before"
+
+run_plugins() {
+  HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/home/.config" \
+    XDG_DATA_HOME="$test_root/home/.local/share" XDG_STATE_HOME="$test_root/home/.local/state" \
+    XDG_CACHE_HOME="$test_root/home/.cache" NVIM_LOG_FILE="$test_root/nvim.log" \
+    nvim --headless -u NONE -l "$repo/lib/agentbox/plugins.lua" "$fixture"
+}
+
+run_plugins >"$test_root/output" 2>&1 || { cat "$test_root/output"; exit 1; }
+plugin_dir=$test_root/home/.local/share/nvim/lazy/fixture
+test "$(git -C "$plugin_dir" rev-parse HEAD)" = "$plugin_commit"
+cmp "$lockfile" "$test_root/lock.before"
+run_plugins >"$test_root/output" 2>&1 || { cat "$test_root/output"; exit 1; }
+test "$(git -C "$plugin_dir" rev-parse HEAD)" = "$plugin_commit"
+cmp "$lockfile" "$test_root/lock.before"
+
+for invalid in missing unusable; do
+  if [ "$invalid" = missing ]; then
+    jq 'del(.fixture)' "$test_root/lock.before" >"$lockfile"
+  else
+    jq '.fixture.commit = "0000000000000000000000000000000000000000"' "$test_root/lock.before" >"$lockfile"
+  fi
+  cp "$lockfile" "$test_root/invalid.before"
+  if run_plugins >"$test_root/output" 2>&1; then
+    printf 'Accepted %s plugin lock entry.\n' "$invalid" >&2
+    exit 1
+  fi
+  cmp "$lockfile" "$test_root/invalid.before"
+done
+printf 'agentbox real Lazy locked-plugin tests passed\n'

@@ -14,6 +14,7 @@ machine_template=$repo/config/agentbox/workbox.json
 fake_bin=$test_root/fake-bin
 mkdir -p "$test_home" "$fake_bin"
 export AGENTBOX_TEST_LOG="$test_root/shell-arguments"
+export AGENTBOX_LIFECYCLE_LOG="$test_root/lifecycle"
 
 fail() {
   printf '%s\n' "$1" >&2
@@ -100,20 +101,21 @@ printf 'Darwin\n'
 EOF
 fake_command orb <<'EOF'
 #!/bin/sh
+printf 'orb %s\n' "$*" >>"$AGENTBOX_LIFECYCLE_LOG"
 case $* in
   'list -q')
-    printf 'workbox\n'
+    if [ "${AGENTBOX_MISSING:-0}" = 0 ]; then printf 'workbox\n'; fi
     ;;
   'info workbox -f json')
     printf '%s\n' '{"record":{"image":{"distro":"ubuntu","version":"current","arch":"arm64"}}}'
     ;;
   'config get machine.workbox.isolated'|'config get machine.workbox.isolate_network')
-    printf 'true\n'
+    printf '%s\n' "${AGENTBOX_ISOLATED:-true}"
     ;;
   'config get machine.workbox.forward_ssh_agent'|'config get machines.expose_ports_to_lan')
     printf 'false\n'
     ;;
-  'config get machine.workbox.mounts'|'config set '*)
+  'config get machine.workbox.mounts'|'config set '*|'start workbox'|'create '*|'delete --force workbox')
     ;;
   *)
     exit 1
@@ -141,6 +143,11 @@ EOF
 fake_command orbctl <<'EOF'
 #!/bin/sh
 printf '%s\n' "$@" >"$AGENTBOX_TEST_LOG"
+if [ "$6" = sh ]; then
+  printf 'guest application\n' >>"$AGENTBOX_LIFECYCLE_LOG"
+  cat >/dev/null
+  exit "${AGENTBOX_APPLY_STATUS:-0}"
+fi
 EOF
 
 key_path=$config_home/agentbox/keys/workbox/github_ed25519
@@ -148,6 +155,70 @@ mkdir -p "$(dirname "$key_path")"
 printf 'synthetic private key\n' >"$key_path"
 printf 'synthetic title\n' >"$key_path.title"
 run_agentbox_with_fakes create
+grep -Fqx 'guest application' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Create did not bootstrap the guest.'
+grep -Fqx 'orb start workbox' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Create did not start the existing guest.'
+
+: >"$AGENTBOX_LIFECYCLE_LOG"
+(AGENTBOX_MISSING=1 run_agentbox_with_fakes create)
+grep -Fq 'orb create --isolated --isolate-network' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Create did not preserve isolation.'
+grep -Fqx 'guest application' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Fresh create did not bootstrap.'
+: >"$AGENTBOX_LIFECYCLE_LOG"
+run_agentbox_with_fakes update
+grep -Fqx 'orb start workbox' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Update did not start the guest.'
+grep -Fqx 'guest application' "$AGENTBOX_LIFECYCLE_LOG" || fail 'Update did not apply the environment.'
+if (AGENTBOX_MISSING=1 run_agentbox_with_fakes update) >"$test_root/output" 2>&1; then
+  fail 'Update created a missing guest.'
+fi
+grep -Fq 'agentbox create' "$test_root/output"
+: >"$AGENTBOX_LIFECYCLE_LOG"
+if (AGENTBOX_ISOLATED=false run_agentbox_with_fakes update) >"$test_root/output" 2>&1; then
+  fail 'Update accepted a non-isolated guest.'
+fi
+if grep -Fqx 'guest application' "$AGENTBOX_LIFECYCLE_LOG"; then fail 'Unsafe guest was changed.'; fi
+if (AGENTBOX_APPLY_STATUS=1 run_agentbox_with_fakes update) >"$test_root/output" 2>&1; then
+  fail 'Update ignored application failure.'
+fi
+
+PATH=$fake_bin:$PATH HOME=$test_home XDG_CONFIG_HOME=$config_home \
+  python3 - "$agentbox" "$AGENTBOX_LIFECYCLE_LOG" <<'PY'
+import os
+import pathlib
+import pty
+import select
+import subprocess
+import sys
+import time
+
+for answer, expected_status in ((b"cancel\n", 1), (b"workbox\n", 0)):
+    log = pathlib.Path(sys.argv[2])
+    log.write_text("")
+    master, slave = pty.openpty()
+    process = subprocess.Popen([sys.argv[1], "rebuild"], stdin=slave, stdout=slave, stderr=slave)
+    os.close(slave)
+    os.write(master, answer)
+    output = b""
+    deadline = time.monotonic() + 10
+    while process.poll() is None and time.monotonic() < deadline:
+        if select.select([master], [], [], 0.1)[0]:
+            try:
+                output += os.read(master, 65536)
+            except OSError:
+                break
+    try:
+        status = process.wait(timeout=1)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+        raise AssertionError("Rebuild did not finish")
+    finally:
+        os.close(master)
+    assert status == expected_status, output.decode()
+    events = log.read_text()
+    if expected_status:
+        assert "orb delete" not in events, events
+    else:
+        assert events.index("orb delete --force workbox") < events.index("orb create ") < events.index("guest application"), events
+PY
 
 combined_ssh_config=$test_root/combined-ssh-config
 cat "$test_home/.ssh/config.d/agentbox" >"$combined_ssh_config"

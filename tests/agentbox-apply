@@ -1,0 +1,61 @@
+#!/bin/sh
+set -eu
+repo=$(dirname "$(dirname "$(realpath "$0")")")
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/agentbox-apply-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT HUP INT TERM
+export AGENTBOX_TEST_LOG="$test_root/log"
+mkdir -p "$test_root/bin" "$test_root/home"
+cat >"$test_root/bin/mise" <<'EOF'
+#!/bin/sh
+printf 'mise %s\n' "$*" >>"$AGENTBOX_TEST_LOG"
+if [ "$*" = 'self-update --yes' ]; then
+  grep -q '^mise trust ' "$AGENTBOX_TEST_LOG" || exit 1
+fi
+if [ "$1" = exec ]; then test "$PWD" = "$HOME" || exit 1; fi
+test "$*" != "${AGENTBOX_TEST_FAIL:-}"
+EOF
+cat >"$test_root/bin/sudo" <<'EOF'
+#!/bin/sh
+printf 'sudo %s\n' "$*" >>"$AGENTBOX_TEST_LOG"
+test "$*" != "${AGENTBOX_TEST_FAIL:-}"
+EOF
+printf '#!/bin/sh\nprintf "Linux\\n"\n' >"$test_root/bin/uname"
+chmod +x "$test_root/bin/"*
+
+run_apply() {
+  HOME="$test_root/home" PATH="$test_root/bin:$PATH" sh "$repo/mise-tasks/agentbox-apply"
+}
+
+run_apply
+cat >"$test_root/expected" <<EOF
+sudo -n apt-get update
+sudo -n env DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y
+mise trust $repo/mise.toml
+mise trust $repo/mise.linux.toml
+mise self-update --yes
+mise bootstrap repos update --yes
+mise bootstrap --yes --skip task
+mise upgrade --global --yes
+mise run bootstrap
+mise exec -- nvim --headless -u NONE -l $repo/lib/agentbox/plugins.lua $repo
+EOF
+diff -u "$test_root/expected" "$AGENTBOX_TEST_LOG"
+for failure in \
+  '-n apt-get update' \
+  '-n env DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y' \
+  'self-update --yes' \
+  'bootstrap repos update --yes' \
+  'bootstrap --yes --skip task' \
+  'upgrade --global --yes' \
+  'run bootstrap' \
+  "exec -- nvim --headless -u NONE -l $repo/lib/agentbox/plugins.lua $repo"; do
+  : >"$AGENTBOX_TEST_LOG"
+  if AGENTBOX_TEST_FAIL="$failure" run_apply >"$test_root/output" 2>&1; then
+    printf 'Expected application failure: %s\n' "$failure" >&2
+    exit 1
+  fi
+  grep -Fq 'Agentbox failed during' "$test_root/output"
+  test "$(tail -n 1 "$AGENTBOX_TEST_LOG")" = "mise $failure" || \
+    test "$(tail -n 1 "$AGENTBOX_TEST_LOG")" = "sudo $failure"
+done
+printf 'agentbox application ordering and failure tests passed\n'

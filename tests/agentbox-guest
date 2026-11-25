@@ -1,0 +1,136 @@
+#!/bin/sh
+set -eu
+
+repo=$(dirname "$(dirname "$(realpath "$0")")")
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/agentbox-guest-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT HUP INT TERM
+export GIT_CONFIG_GLOBAL="$test_root/gitconfig"
+export GIT_CONFIG_NOSYSTEM=1
+export AGENTBOX_TEST_LOG="$test_root/log"
+export AGENTBOX_TEST_BIN="$test_root/bin"
+export AGENTBOX_REAL_GIT
+AGENTBOX_REAL_GIT=$(command -v git)
+mkdir -p "$test_root/bin" "$test_root/home/.local/bin"
+git config --global user.name 'Test Author'
+git config --global user.email 'author@example.invalid'
+git config --global commit.gpgsign false
+git init -qb master "$test_root/published"
+mkdir -p "$test_root/published/mise-tasks"
+cat >"$test_root/published/mise-tasks/agentbox-apply" <<'EOF'
+#!/bin/sh
+printf 'published application\n' >>"$AGENTBOX_TEST_LOG"
+EOF
+git -C "$test_root/published" add .
+git -C "$test_root/published" commit -qm initial
+git config --global url."$test_root/published".insteadOf https://github.com/pfleidi/dotfiles.git
+cat >"$test_root/bin/sudo" <<'EOF'
+#!/bin/sh
+printf 'sudo %s\n' "$*" >>"$AGENTBOX_TEST_LOG"
+EOF
+cat >"$test_root/bin/curl" <<'EOF'
+#!/bin/sh
+test "${AGENTBOX_TEST_DOWNLOAD_FAIL:-0}" = 0 || exit 1
+while [ "$1" != -o ]; do shift; done
+cat >"$2" <<'INSTALL'
+mkdir -p "$(dirname "$MISE_INSTALL_PATH")"
+cp "$AGENTBOX_TEST_BIN/mise" "$MISE_INSTALL_PATH"
+INSTALL
+EOF
+printf '#!/bin/sh\nexit 0\n' >"$test_root/bin/mise"
+chmod +x "$test_root/bin/"*
+cat >"$test_root/bin/git" <<'EOF'
+#!/bin/sh
+case $* in
+  *' status '*)
+    if [ "${AGENTBOX_STATUS_FAIL:-0}" = 1 ]; then exit 1; fi
+    ;;
+esac
+exec "$AGENTBOX_REAL_GIT" "$@"
+EOF
+chmod +x "$test_root/bin/git"
+printf 'synthetic dedicated key\n' >"$test_root/key"
+
+run_guest() {
+  HOME="$test_root/home" PATH="$test_root/bin:$PATH" sh "$repo/lib/agentbox/bootstrap" <"$test_root/key"
+}
+
+run_guest
+checkout=$test_root/home/dotfiles
+test "$(tail -n 1 "$AGENTBOX_TEST_LOG")" = 'published application'
+test "$(git -C "$checkout" rev-parse HEAD)" = "$(git -C "$test_root/published" rev-parse HEAD)"
+cmp "$test_root/key" "$test_root/home/.ssh/agentbox_ed25519"
+case $(uname -s) in
+  Darwin) mode=$(stat -f %Lp "$test_root/home/.ssh/agentbox_ed25519") ;;
+  *) mode=$(stat -c %a "$test_root/home/.ssh/agentbox_ed25519") ;;
+esac
+test "$mode" = 600
+printf '\nHost other\n    User example\n' >>"$test_root/home/.ssh/config"
+run_guest
+grep -Fq 'Host other' "$test_root/home/.ssh/config"
+test -z "$(git -C "$checkout" status --porcelain)"
+
+expect_preserved_failure() {
+  expected=$1
+  before=$(git -C "$checkout" rev-parse HEAD)
+  : >"$AGENTBOX_TEST_LOG"
+  if run_guest >"$test_root/output" 2>&1; then
+    printf 'Expected rejection: %s\n' "$expected" >&2
+    exit 1
+  fi
+  grep -Fq "$expected" "$test_root/output" || { cat "$test_root/output"; exit 1; }
+  test "$before" = "$(git -C "$checkout" rev-parse HEAD)"
+  test ! -s "$AGENTBOX_TEST_LOG"
+}
+
+(AGENTBOX_STATUS_FAIL=1 expect_preserved_failure 'checkout inspection')
+
+printf '\nlocal edit\n' >>"$checkout/mise-tasks/agentbox-apply"
+expect_preserved_failure 'local changes'
+grep -Fq 'local edit' "$checkout/mise-tasks/agentbox-apply"
+git -C "$checkout" restore .
+touch "$checkout/untracked"
+expect_preserved_failure 'local changes'
+test -f "$checkout/untracked"
+rm "$checkout/untracked"
+git -C "$checkout" commit --allow-empty -qm local
+expect_preserved_failure 'unpublished commits'
+git -C "$test_root/published" commit --allow-empty -qm remote
+expect_preserved_failure 'unpublished commits'
+git -C "$checkout" reset --hard -q HEAD~1
+cat >"$test_root/published/mise-tasks/agentbox-apply" <<'EOF'
+#!/bin/sh
+printf 'updated published application\n' >>"$AGENTBOX_TEST_LOG"
+EOF
+git -C "$test_root/published" commit -qam update
+run_guest
+test "$(tail -n 1 "$AGENTBOX_TEST_LOG")" = 'updated published application'
+test -z "$(git -C "$checkout" status --porcelain)"
+
+git -C "$checkout" switch -qc local-branch
+expect_preserved_failure 'master branch'
+git -C "$checkout" switch -q master
+git -C "$checkout" remote set-url origin https://example.invalid/other.git
+expect_preserved_failure 'origin'
+git -C "$checkout" remote set-url origin https://github.com/pfleidi/dotfiles.git
+mv "$test_root/published" "$test_root/unavailable"
+expect_preserved_failure 'fetch'
+mv "$test_root/unavailable" "$test_root/published"
+printf 'conflicting key\n' >"$test_root/home/.ssh/agentbox_ed25519"
+expect_preserved_failure 'conflicting'
+test "$(cat "$test_root/home/.ssh/agentbox_ed25519")" = 'conflicting key'
+cp "$test_root/key" "$test_root/home/.ssh/agentbox_ed25519"
+mv "$checkout" "$test_root/saved-checkout"
+mkdir -p "$checkout"
+touch "$checkout/keep"
+: >"$AGENTBOX_TEST_LOG"
+if run_guest >"$test_root/output" 2>&1; then exit 1; fi
+test -f "$checkout/keep"
+test ! -s "$AGENTBOX_TEST_LOG"
+rm "$test_root/home/.local/bin/mise"
+rm "$checkout/keep"
+rmdir "$checkout"
+mv "$test_root/saved-checkout" "$checkout"
+if AGENTBOX_TEST_DOWNLOAD_FAIL=1 run_guest >"$test_root/output" 2>&1; then exit 1; fi
+test ! -s "$AGENTBOX_TEST_LOG"
+
+printf 'agentbox guest checkout and key tests passed\n'
